@@ -1,6 +1,8 @@
 # Marketing Analytics (MSc. In Business Analytics Final Project)
 Solved 9 biz tasks by 18 graphs and 10 statistical methods include dummy data partitioning (RMSE & R2), stepwise model selection, multicollinearity (correlation, VIF), MLR, GLM for logistic regression.
 
+*EDA, Machine Learning (Regression), Group comparison*
+
 ***
 
 ![pic2_thumbnail JPG](https://user-images.githubusercontent.com/81752452/133225337-86ee850c-e246-4483-8627-e170c3cef596.png)
