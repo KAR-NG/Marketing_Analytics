@@ -13,11 +13,9 @@ Solved 9 biz tasks by 18 graphs and 10 statistical methods include dummy data pa
 
 *Reference*
 
+https://www.kaggle.com/jackdaoud/marketing-data
+
 Australia Bureau of Statistics 2014, Age Standard, viewed 26 July 2021, https://www.abs.gov.au/statistics/standards/age-standard/latest-release
-
-Daoud J 2021, EDA & Statistics Analysis with Marketing Data, viewed 26 July 2021, https://www.kaggle.com/jackdaoud/eda-statistics-analysis-with-marketing-data.
-
-Crockett J 2021, Marketing Analytics EDA task [Final], viewed 28 July 2021, https://www.kaggle.com/jennifercrockett/marketing-analytics-eda-task-final
 
 Minitab Blog Editor 2013, Enough Is Enough! Handling Multicollinearity in Regression Analysis, viewed 26 July 2021, https://blog.minitab.com/en/understanding-statistics/handling-multicollinearity-in-regression-analysis
 
