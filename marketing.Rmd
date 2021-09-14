@@ -1,0 +1,1786 @@
+---
+title: "Marketing Analytics"
+author: "Kar Ng"
+date: "7/21/2021"
+output: 
+  html_document: 
+    code_folding: hide
+    toc: true
+    toc_depth: 4
+    toc_float: true
+
+---
+
+
+***
+
+![](C:\Users\karho\Desktop\R and Stats\R for online presence\20210720_p10_MarketingAnalytics\marketing\pic2_thumbnail.JPG.png)
+
+
+***
+
+```{r echo=FALSE}
+bytes <- file.size("marketing.Rmd")
+words <- bytes/10
+minutes <- words/200
+```
+
+Reading time: `r round(minutes)` minutes
+
+
+## 1 SUMMARY
+
+This is a personal project uses a public dataset from *Kaggle* that designed for students in MSc. in Business Analytics as their final project. The dataset comprised of customer information, sales channels, products sold by the company, and the acceptance data of marketing campaigns. There are 4 tasks for visual exploration and 5 tasks for statistical analysis. 
+
+All 9 business tasks have been solved by 18 graphs and 10 statistical methods. Statistical methods used in this project include: 
+
+* Exploratory data analysis (EDA)  
+* Multicollinearity test using correlation & VIF  
+* Data partitioning to create train & test for RMSE & R2  
+* Stepwise model selection  
+* Multiple linear regression (MLR)   
+* Generalised Linear Models (GLM)’s binomial for logistic regression  
+* Normality test using Q-Q plot and Shapiro-Wilk test  
+* Variance test with Levene’s test   
+* Omnibus test with Kruskal-Wallis Test  
+* Two-sample non-parametric test with Mann-Whitney test  
+
+Results from EDA reveal that most customer are in mature age between 30 to 55, 51% of customers are from Spain, half of the customers have education level of "graduate" level, 71.5% of customers have a least 1 children home, half of the customers have income between \$35k to \$70k and wine is the best selling product that contributing 50.15% to the total revenue. All marketing campaigns weren't doing very well with acceptance rates of lower than 15%. In store sales is the most performing channels. 
+
+Results from statistical analysis reveal in-store purchases is significantly affected by products, deals, purchases made through web, income, number of kids at home, sales through catalog and customer's visit frequency to company's website. Purchasing power of customers from the US do not significantly different from other countries (P-value 0.4004). Gold buyers have more store purchases (P-value < 0.05). Married PhD candidates spent significantly less than other customer groups on fish, with a p-value of less than 0.05. Statistical analysis also concluded that there is no significant relationship between geographical regions and success of a campaign. 
+
+<br/>
+
+*Highlights*
+
+<br/>
+
+![](C:\Users\karho\Desktop\R and Stats\R for online presence\20210720_p10_MarketingAnalytics\marketing\pic1_highlight.JPG)
+
+<br/>
+
+
+
+
+## 2 R PACKAGES
+
+R packages loaded in this project include tidyverse packages (ggplot2, dplyr, tidyr, readr, purrr, tibble, stringr, and forcats), skimr, kableExtra, DT, lubridate, zoo, gridExtra, ggplotr, ggrepel, car, caret, DescTools, multcomp, and olsrr. 
+
+```{r, message=FALSE, warning=FALSE}
+
+library(tidyverse)
+library(skimr)
+library(kableExtra)
+library(DT)
+library(lubridate)
+library(zoo) 
+library(gridExtra)
+library(qqplotr)
+library(ggrepel)
+library(car)     # For VIF
+library(caret)
+library(DescTools)
+library(multcomp)
+library(olsrr)
+
+```
+
+## 3 INTRODUCTION
+
+The purpose of this project is to answer a series of general business questions using R programming language. This project has a dataset that provides many marketing data include general customer information, products sold by the company, the company's sale channels, and the performance of a series of marketing campaigns that the company has launched.
+
+The business questions that I am tasked to answer are separated into 2 main bodies, one is for data exploration analysis, and the other one is for statistical analysis. 
+
+Business questions for data exploration analysis (EDA) are:
+
+* What does the average customer look like for this company?  
+* Which products are performing best?   
+* Which marketing campaign is most successful?  
+* Which channels are underperforming?  
+
+Business questions for statistical analysis are:
+
+* What are the factors that significantly related to in-store purchases?  
+* Does US's purchasing power significantly better than the rest of hte world in terms of total purchase?  
+* Are gold lovers prefer to shop in store?  
+* Do "Married PhD candidates" have a significant relation with amount spent on fish? What other factors are significantly related to amount spent on fish?  
+* Is there a significant relationship between geographical regional and success of a campaign?  
+
+This project uses a public dataset from *Kaggle*. *Kaggle* is a professional website for data science community. The dataset was supplied by Dr. Omar Romero-Hernandez for his students for their final project in order to test their statistical analysis skills as part of a MSc. in Business Analytics. Please click this [Link](https://www.kaggle.com/jackdaoud/marketing-data) to the website. All of the above business questions are actually questions for the marketing students to answer, visit this [Link](https://www.kaggle.com/jackdaoud/marketing-data/tasks?taskId=2986) to the relevant website.  
+
+
+## 4 DATA PREPARATION
+
+### 4.1 Data import
+
+Following codes import the dataset (click the *code* button). Table below is an indication of successful data import. 
+
+***
+
+
+```{r, message=FALSE, warning=FALSE}
+
+marketing_data <- read_csv("marketing_data.csv")
+datatable(marketing_data)
+
+```
+
+***
+
+### 4.2 Data description
+
+Following table describes all variables in the dataset, extracted from the [Kaggle website](https://www.kaggle.com/jackdaoud/marketing-data). 
+
+```{r}
+
+Variable <- c("ID", 
+              "Year_Birth", 
+              "Education",
+              "Marital_Status",
+              "Income",
+              "Kidhome",
+              "Teenhome",
+              "Dt_Customer",  
+              "Recency",
+              "MntWines",
+              "MntFruits",
+              "MntMeatProducts",
+              "MntFishProducts",
+              "MntSweetProducts",
+              "MntGoldProds",
+              "NumDealsPurchases",
+              "NumWebPurchases",
+              "NumCatalogPurchases",
+              "NumStorePurchases",
+              "NumWebVisitsMonth",
+              "AcceptedCmp3",
+              "AcceptedCmp4",
+              "AcceptedCmp5",
+              "AcceptedCmp1",
+              "AcceptedCmp2",
+              "Response",
+              "Complain",
+              "Country")
+
+Description <- c("Customer's unique identifier",
+                 "Customer's birth year",
+                 "Customer's education level",
+                 "Customer's marital status",
+                 "Customer's yearly household income",
+                 "Number of children in customer's household",
+                 "Number of teenagers in customer's household",
+                 "Date of customer's enrollment with the company",
+                 "Number of days since customer's last purchase",
+                 "Amount spent on wine in the last 2 years",
+                 "Amount spent on fruits in the last 2 years",
+                 "Amount spent on meat in the last 2 years",
+                 "Amount spent on fish in the last 2 years",
+                 "Amount spent on sweets in the last 2 years",
+                 "Amount spent on gold in the last 2 years",
+                 "Number of purchases made with a discount",
+                 "Number of purchases made through the company's web site",
+                 "Number of purchases made using a catalogue",
+                 "Number of purchases made directly in stores",
+                 "Number of visits to company's web site in the last month",
+                 "1 if customer accepted the offer in the 3rd campaign, 0 otherwise",
+                 "1 if customer accepted the offer in the 4th campaign, 0 otherwise",
+                 "1 if customer accepted the offer in the 5th campaign, 0 otherwise",
+                 "1 if customer accepted the offer in the 1st campaign, 0 otherwise",
+                 "1 if customer accepted the offer in the 2nd campaign, 0 otherwise",
+                 "1 if customer accepted the offer in the last campaign, 0 otherwise",
+                 "1 if customer complained in the last 2 years, 0 otherwise",
+                 "Customer's location")
+
+data.frame(No = c(1:28), Variable, Description) %>% 
+  kbl() %>% 
+  kable_styling(bootstrap_options = c("bordered", "striped", "hover"))
+
+
+```
+
+It is a comprehensive dataset and it contains classifiable information.
+
+* 1. **Customer information**: ID, age, education, marital status, income, number of kids and teens at home, date of customer's enrollment with the company, recency, complain(s) made in the last 2 years, country of the customer currently at (I assume), the number of purchases made during a discount, and customers' frequency of visiting company's website.  
+
+* 2. **Products of the company**: Wines, fruits, meat, fish, sweet, and gold.
+
+* 3. **Sale Channels**: Number of purchases made via company website, catalog, and in the store.
+
+* 4. Customers responses on **company's marketing campaigns**. There are a total of 6 campaigns launched.
+
+
+### 4.3 Data exploration
+
+This dataset has 2,240 rows of observations and 28 columns of variables. Among the variables, there are 5 character variables and 23 numerical variables. 
+
+
+***
+
+```{r}
+skim_without_charts(marketing_data)
+
+```
+
+***  
+
+Insights:
+
+* This dataset is very complete. All variables have a **complete_rate** of 1, which stands for 100%, indicating there is no any missing value their columns. It associated with the adjacent column **n_missing**, which is almost 0 for all variables.   
+
+* Except for the variable "Income", it has a **complete_rate** of 0.989 (98.9%). Generally, an analyst will remove these NA rows because 98.9% is a level that is already high enough to accept. However, I will fill up these blank cells by looking for mean (if normality is observed) or median (if outlier is observed) from relevant information. This will be carried out in data manipulation section.  
+
+* There are no white spaces among the 5 character variables that needed to clean as well, by examining the column **whitespace**.  
+
+Following summary provides a quick way to examine are the data types assigned to each column rightfully.  
+
+```{r}
+glimpse(marketing_data)
+
+```
+
+I will convert some of the variables into factor type. "Factor" is a variable type that can be assigned to either character or numerical variable when these variables are found useful for grouping the data. For example, variables "Country", "Marital_Status", and "Year_Birth" can be useful to group data. This feature is important during data analysis processing for cleaning,  computational and machine learning techniques. 
+
+Following are a few conversions that I will perform in the next data cleaning and manipulation section. 
+
+Variables that need to be converted into factor type (fct) are
+
+* Education  
+* Marital_Status        
+* Country
+
+Variables that need to be converted into numerical (dbl) type:
+
+* Income              
+
+Variable that need to be in date (date) data type:
+
+* Dt_Customer 
+
+
+## 5 DATA CLEANING AND MANIPULATION
+
+### 5.1 Data type conversion
+
+This section continues with the work mentioned in the last section to convert some variables into their rightfully type so that the data analysis can be more efficient and accurate. Following codes complete the task (click the right button).
+
+```{r}
+# I will retain the original dataset as marketing_data and give a new object named "md".
+
+md <- marketing_data
+
+# Start mutating the dataset to obtain the correct data type.
+
+md <- md %>% 
+  mutate(Education = as.factor(Education),
+         Marital_Status = as.factor(Marital_Status),
+         Country = as.factor(Country),
+         Dt_Customer = mdy(Dt_Customer))
+
+md <- md %>% 
+  mutate(Income = gsub(",", "", Income),
+         Income = gsub("\\$", "", Income),
+         Income = str_sub(Income, end = -4),
+         Income = as.numeric(Income))
+         
+
+```
+
+Checking the type of these variables using following code (click the right botton). Following results show that the conversions have been successful
+
+```{r}
+check <- md %>% dplyr::select(Education, Marital_Status, Country, Dt_Customer, Income)
+glimpse(check)
+```
+
+### 5.2 Examing tricky missing value
+
+Though the dataset was found very complete without any missing value, however, if a missing value is filled up manually with character string data such as "null", or "missing value" into the cells by the dataset provider, then it will not be detected by the exploration method I used because R will recognise them as a part of the data in character type. 
+
+This section will examine the presence of these words (or relevant) in the character and factor variables of the dataset.
+
+```{r, warning=FALSE, message=FALSE}
+check2 <- md %>% 
+  dplyr::select(is.factor, -ID)
+
+sapply(check2, levels)
+
+```
+There are no any written form of missing value in all variables (such as "Null", "Missing_value", "Blank", or whatever relevant). The column "ID" has its original data type as numeric at the absence of any alphabetical string data, hence it does not contain any written form of missing value. 
+
+Still, I am able to check is there any character data (such as "Null", "Missing_value", "Blank", or whatever relevant) falling into the **ID** column as well, by running following code (click the right button). The result is 0, which indicates that there is no character data in the column of **ID**.
+
+```{r}
+which(str_detect(md$ID, "[[:alpha:]]"))
+
+```
+
+### 5.3 Fill up the blank salary cells 
+
+In the section of data preparation, I found that the column **income** has 24 missing value.   
+
+***
+
+```{r}
+skim_without_charts(md$Income)
+
+```
+
+***
+
+Though the proportion of missing data in the Income column is only 1.1%, I will fill up these missing values with either mean or median to make the dataset complete. It will rely on the normality of the data or the presence of outliers. The computation will be affected by variables **education level**, **age**, and **country of the customer**. These are the only information I can rely on from the dataset.  
+
+Following table shows how many many missing values by country and education.
+
+```{r}
+# Examine the characteristics of individual missing salary. 
+
+md_na <- md[is.na(md$Income),] %>% 
+  dplyr::select(ID, Education, Country) %>% 
+  group_by(Country, Education) %>% 
+  count()
+
+md_na
+
+```
+
+I have 2 options when filling up these missing values, either to use the median or mean. I will use boxplot to help making the decision. 
+
+```{r, fig.width=10, fig.height=10}
+
+md_complete <- md[complete.cases(md),]
+
+ggplot(md_complete, aes(x = Education, y = Income)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(colour = "blue", alpha = 0.5, width = 0.2) +
+  facet_wrap(~Country, scale = "free") +
+  stat_boxplot(geom = "errorbar")
+
+```
+
+Insights: 
+
+* For **AUS** group, I will use *mean* for the missing value in the 2n Cycle, Graduation, Master, and PhD education levels. 
+
+* For **CA**, it is better to use *median* to fill up the missing value in the PhD dataset because of the presence of extreme outlier.   
+
+* For **GER**, I will use *mean* to fill up missing values in teh 2n Cycle, Graduation, Master, and PhD education levels.
+
+* For **IND**, I will use *mean* to fill up the missing value in the 2n Cycle education level. 
+
+* For **SP**, I will use *median* to fill up the missing value in the Graduation education level.
+
+* For **US**, I will use *mean* to fill up the missing value in the Graduation and Master education levels.   
+
+
+Following codes complete the compuations. 
+
+```{r}
+
+md2 <- md %>% 
+  group_by(Country, Education) %>% 
+  mutate(Income = ifelse(Country == "AUS" & is.na(Income), mean(Income, na.rm = T), Income),
+         Income = ifelse(Country == "CA" & is.na(Income), median(Income, na.rm = T), Income),
+         Income = ifelse(Country == "GER" & is.na(Income), mean(Income, na.rm = T), Income),
+         Income = ifelse(Country == "IND" & is.na(Income), mean(Income, na.rm = T), Income),
+         Income = ifelse(Country == "SP" & is.na(Income), median(Income, na.rm = T), Income),
+         Income = ifelse(Country == "US" & is.na(Income), mean(Income, na.rm =T), Income)) %>% 
+  ungroup()
+         
+```
+
+Checking is there any more NA in the md2 dataset. The result shown 0 rows, meanning the conversion is successful. 
+
+```{r}
+
+# Checking is there any more NA in the md2 dataset
+md2[!complete.cases(md2), ]  
+
+```
+
+Checking the 24 rows that had no income data in the beginning. They have now been filed up with newly computed income data based on mean or median, based on country and education level. Following result shows that the computation has been successful. 
+
+```{r}
+
+# Getting the 24 rows that had missing values
+
+NA_locate <- which(!complete.cases(md))
+
+# Checking newly computed Income. 
+
+md2_check <- md2 %>% dplyr::select(Country, Education, Income)
+md2_check[NA_locate,]
+
+```
+
+### 5.4 Create Age Column
+
+Since there is year of birth recorded in the dataset, an **"age"** column can be pre-prepared just in case if this information is required in the later stages. I compute the age by using the enrollment rate minus the year of birth and synthese a column named **"Age_atRegister"**. A column **"age_group"** has also been synthesised base on the **"Age_atRegister"** column. 
+
+Following code complete the creation (click the right button). 
+
+
+```{r}
+# set up the data frame
+
+md2 <- md2 %>% 
+  mutate(age = year(Dt_Customer) - Year_Birth + 1,
+         age_group = case_when(
+           age < 1 ~ "baby",
+           age > 1 & age < 14 ~ "youth",
+           age > 15 & age < 24 ~ "young.adult",
+           age > 25 & age < 44 ~ "middle.adult",
+           age > 45 & age < 65 ~ "older.adult",
+           TRUE ~ "senior"
+         )) %>% 
+  relocate(age, .after = Year_Birth) %>% 
+  relocate(age_group, .after = age) %>% 
+  rename("Age_atRegister" = "age")
+
+# factorise the "age group" column and rearrange the sequence of levels
+
+md2 <- md2 %>% mutate(age_group = factor(age_group, 
+                                         levels = c("young.adult", "middle.adult", 
+                                                    "older.adult", "senior")))
+
+
+                             
+```
+
+
+### 5.5 Data processing summary
+
+* I have converted the variables **Education**, **Marital_Status**, and **Country** into *factor*.
+
+* I have converted the **Dt_Customer** from character into *date* type. 
+
+* I have removed the dollar and comma signs in the **Income** column and converted it into *numerical* type. 
+
+* There are 24 out of 2240 rows of missing values in the **Income** column, I have filled them up with mean and median, with consideration of respective country and education level.  
+
+* I created two new columns **Age_atRegister** and **age_group**.
+
+The dataset is now analysis-ready.
+
+
+## 6 EXPLORATORY DATA ANALYSIS (EDA)
+
+### 6.1 What does the average customer look like for this company?
+
+In section 6.1, I will explore customer information of the company by age, country, education, marital status, family size, and income.
+
+#### 6.1.1 Age
+
+The company has customers from 8 different countries, and most of their customers are aged between 30 to 55. The body of boxplots represent 50% of the data. Boxplots of each country overlap each other indicating that there is no difference in age among countries. 
+
+* The country "SP" has the most customers followed by "SA" and "CA". The country "ME" has the least customers with only data from 3 customers. 
+
+* All countries have similar spread in customer age. 
+
+```{r, warning=FALSE, message=FALSE, fig.align='center'}
+
+# set up df
+
+df611 <- md2 %>% 
+  group_by(Country) %>% 
+  mutate(x_lab = paste0(Country, "\n", "(n= ", n(), ")"))
+  
+# plot
+
+ggplot(df611, aes(x = x_lab, y = Age_atRegister, fill = Country)) +
+  geom_hline(yintercept = 30, linetype = 2, color = "blue") +
+  geom_hline(yintercept = 55, linetype = 2, color = "blue") +
+  geom_boxplot(outlier.shape = NA, alpha = 0.3) + 
+  stat_boxplot(geom = "errorbar") +
+  geom_jitter(aes(fill = Country) , shape = 21, alpha = 0.4, width = 0.2) +
+  scale_y_continuous(lim = c(0, 80), breaks = seq( 0, 80, 10)) +
+  theme(legend.position = "NA",
+        axis.title.y = element_text(margin = margin(0, 10, 0, 0)),
+        plot.title = element_text(face = "bold")) +
+  labs(title = "Figure 1. Distribution of Customer's Age from Different Country",
+       y = "Age at Registration") 
+
+
+```
+
+
+#### 6.1.2 Country
+
+Following pi-chart shows that nearly half of the customers are from "SP", which is Spain. The next largest pool of customer is from SA (South Africa) at 15%, then followed by the third CA (Canada) at 12%. 
+
+```{r, fig.width=6, fig.height=6, fig.align='center'}
+
+# produce dataframe
+
+df_coun <- md2 %>% 
+  group_by(Country) %>% 
+  summarise(count = n()) %>% 
+  mutate(per = round(count / sum(count)*100, 1),
+         per = paste0(per, "%"))
+
+# plot
+
+ggplot(df_coun, aes(x = "", y = count, fill = Country)) +
+  geom_bar(stat = "identity") +
+  coord_polar(theta = "y",
+              start = 50) +  
+  geom_text(aes(label = paste0(Country, " (", per, ")")), 
+            position = position_stack(vjust = 0.5),
+            size = 4) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.title = element_blank(),
+        plot.title = element_text(face = "bold")) +
+  labs(title = "Figure 2. Distribution of Customers from Different Countries")
+  
+
+
+```
+
+#### 6.1.3 Education
+
+* Overall, most customers have a "Graduation" education level (50.3%).
+
+* "Graduation", "PHD" and "Master" customers generally ranked the first 3 most important customer group in all country. 
+
+
+```{r, fig.width=10, fig.height=8, message=FALSE, fig.align='center'}
+
+# Set up data frame
+
+df613.1 <- md2 %>%
+  group_by(Education) %>% 
+  summarise(Count = n()) %>% 
+  mutate(per = round(Count/sum(Count)*100, 1),
+         per = paste(per,"%") )
+
+# plot
+
+plot_df613.1 <- ggplot(df613.1, aes(x = reorder(Education, -Count), y = Count, fill = Education)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = per, vjust = -1.2)) +
+  scale_y_continuous(lim = c(0, 1200), breaks = seq(0, 1200, 200)) +
+  theme(legend.position = "none",
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        plot.title = element_text(face = "bold"),
+        axis.text.x = element_text(angle = 50, vjust = 0.75)) +
+  labs(x = "Education",
+       title = "Figure 3. Education") 
+
+
+# set up faceted data frame
+
+df613.2 <- md2 %>%
+  group_by(Country, Education) %>% 
+  summarise(Count = n()) %>% 
+  mutate(per = round(Count/sum(Count)*100, 1),
+         per = paste0(per, "%"))
+
+# plot
+
+plot_df613.2 <- ggplot(df613.2, aes(x = reorder(Education, -Count), y = Count, fill = Education)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = per, vjust = -1.2), size = 3) +
+  scale_y_continuous(lim = c(0, 1200), breaks = seq(0, 1200, 200)) +
+  theme(legend.position = "none",
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        axis.text.x = element_text(angle = 50, vjust = 0.75),
+        plot.title = element_text(face = "bold")) +
+  labs(x = "Education",
+       title = "Figure 4. Education By Countries") +
+  facet_wrap(~ Country)
+      
+
+# Combine
+
+grid.arrange(plot_df613.1, plot_df613.2,
+                         layout_matrix = rbind(c(1,1,1,2,2,2,2,2),
+                                   c(1,1,1,2,2,2,2,2),
+                                   c(1,1,1,2,2,2,2,2),
+                                   c(1,1,1,2,2,2,2,2),
+                                   c(1,1,1,2,2,2,2,2),
+                                   c(1,1,1,2,2,2,2,2),
+                                   c(1,1,1,2,2,2,2,2)))
+
+
+
+```
+
+#### 6.1.4 Marital Status
+
+Nearly 40% of the customers are married, 25.6% staying together, and 21.3% are single. 
+
+
+```{r, fig.width=12, fig.height=8, message=FALSE, fig.align='center'}
+
+# set up dataframe
+
+df614 <- md2 %>% 
+  group_by(Marital_Status) %>% 
+  summarise(count = n()) %>% 
+  mutate(per = round(count/sum(count)*100, 1),
+         per = paste0(per, "%"))
+
+
+# plot
+
+plot_df614.1 <- ggplot(df614, aes(x = reorder(Marital_Status, -count), y = count, fill = Marital_Status)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = per, vjust = -1.2)) +
+  scale_y_continuous(lim = c(0, 1200), breaks = seq(0, 1200, 200)) +
+  theme(legend.position = "none",
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        plot.title = element_text(face = "bold"),
+        axis.text.x = element_text(angle = 50, vjust = 0.75)) +
+  labs(x = "Marital_Status",
+       title = "Figure 5. Marital_Status")
+
+
+# set up dataframe2
+
+df614.2 <- md2 %>% 
+  group_by(Country, Marital_Status) %>% 
+  summarise(count = n()) %>% 
+  mutate(per = round(count/sum(count)*100, 1),
+         per = paste0(per, "%"))
+
+
+# plot 
+
+plot_df614.2 <- ggplot(df614.2, aes(x = reorder(Marital_Status, -count), y = count, fill = Marital_Status)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = per, vjust = -1.2), size = 3) +
+  scale_y_continuous(lim = c(0, 1200), breaks = seq(0, 1200, 200)) +
+  theme(legend.position = "none",
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        plot.title = element_text(face = "bold"),
+        axis.text.x = element_text(angle = 50, vjust = 0.75)) +
+  labs(x = "Marital_Status",
+       title = "Figure 6. Marital_Status by countries") +
+  facet_wrap(~ Country)
+
+
+# Combine
+
+grid.arrange(plot_df614.1, plot_df614.2,
+                         layout_matrix = rbind(c(1,1,1,2,2,2,2,2),
+                                   c(1,1,1,2,2,2,2,2),
+                                   c(1,1,1,2,2,2,2,2),
+                                   c(1,1,1,2,2,2,2,2),
+                                   c(1,1,1,2,2,2,2,2),
+                                   c(1,1,1,2,2,2,2,2),
+                                   c(1,1,1,2,2,2,2,2)))
+
+
+```
+
+#### 6.1.5 Customer's Family size 
+
+* Only 28.5% of customers have no children (either at least a kid or teen in the family).  
+
+* 71.5% of customers have at least 1 kid or 1 teen in the family.   
+
+
+```{r, warning=FALSE, message=FALSE, fig.height=6, fig.width=8, fig.align='center'}
+
+# set up df
+
+df615_0 <- md2 %>% 
+  mutate(Familysize = paste0(Kidhome, " Kid ", Teenhome, " Teen")) %>% 
+  dplyr::select(Familysize)
+
+df615_1 <- df615_0 %>% 
+  group_by(Familysize) %>% 
+  summarise(Count = n()) %>% 
+  mutate(per = round(Count/sum(Count)*100, 1),
+         per = paste(per, "%"),
+         Familysize = factor(Familysize))
+
+# plot
+
+ggplot(df615_1, aes(x = reorder(Familysize, -Count), y = Count, fill = Familysize)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = per), size = 4, vjust = -0.8) +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 25, vjust = 0.5),
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        axis.title.y = element_text(margin = margin(0, 10, 0, 0))) +
+  scale_y_continuous(lim = c(0, 800)) +
+  labs(title = "Figure 7. Bar Chart of Family Size among Customers",
+       x = "Family Size")
+
+```
+
+
+#### 6.1.6 Income 
+
+The average and median income of customer is \$52,250 and \$51,550. The mean and median income is not very far away from each other, I would assume a normal distribution around the mean and median. The maximum and minimum incomes might be outliers. 
+
+```{r}
+summary(md2$Income)
+
+```
+
+* I am 95% confidence that the true mean is falling between \$51,212.46 and \$53,287.48.
+
+```{r}
+t.test(md2$Income)
+
+```
+
+* 50% of customers have income falls approximately between \$35k to \$70k.
+
+```{r, warning=FALSE, message=FALSE, fig.align='center'}
+ggplot(md2, aes(x = Income)) +
+  geom_boxplot(fill = "purple", alpha = 0.5, size = 1, width = 0.1)  +
+  scale_x_continuous(lim = c(0, 200000),
+                     breaks = seq(0, 200000, 20000),
+                     labels = function(x)paste0("$", {x/1000}, "k")) +
+  theme_classic() +
+  theme(plot.title = element_text(face = "bold"),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()) +
+  labs(title = "Figure 8. Boxplot to show income distribution",
+       subtitle = "A outlier point at $666,666 has been removed")
+  
+```
+* Income among education levels are not obviously different from each other except the customers from basic education level, they have the lowest income. 
+
+```{r, fig.width=10, fig.height=7, message=FALSE, warning=FALSE, fig.align='center'}
+ggplot(md2, aes(y = Income, x = age_group, fill = Education)) +
+  geom_boxplot(alpha = 0.5, size = 1)  +
+  scale_y_continuous(lim = c(0, 200000),
+                     breaks = seq(0, 200000, 20000),
+                     labels = function(x)paste0("$", {x/1000}, "k")) +
+  theme_bw() +
+  theme(plot.title = element_text(face = "bold"),
+        axis.text.x = element_text(angle = 90, vjust = -0.15),
+        axis.title.x = element_text(vjust = -2),
+        legend.position = "none") +
+  labs(title = "Figure 8. Boxplot to show income distribution",
+       subtitle = "A outlier point at $666,666 has been removed",
+       x = "Age Group") +
+  facet_wrap(~ Education, nrow = 1) 
+
+
+```
+
+
+### 6.2 Which products are performing the best?   
+
+Products of the company include wines, fruits, meat, fish, sweet, and gold. Wine is the best selling products of the company which contributing 50.15% to the total revenue, followed by 27.56% of meat and then the 7.27% of gold. 
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+
+# set up df
+
+df6.2 <- md2 %>% 
+  dplyr::select(MntWines, MntFruits, MntMeatProducts, 
+         MntFishProducts, MntSweetProducts, MntGoldProds) %>% 
+  rename("Wine" = "MntWines",
+         "Fruit" = "MntFruits",
+         "Meat" = "MntMeatProducts",
+         "Fish" = "MntFishProducts",
+         "Sweet" = "MntSweetProducts",
+         "Gold" = "MntGoldProds") %>% 
+  pivot_longer(c(Wine, Fruit, Meat, Fish, Sweet, Gold),
+               names_to = "products",
+               values_to = "amount_spent") %>% 
+  group_by(products) %>% 
+  summarise(total_revenue = sum(amount_spent)) %>% 
+  mutate(per = round(total_revenue/sum(total_revenue)*100, 2),
+         per = paste0(per, "%"),
+         lbl = paste0("$", prettyNum(total_revenue,big.mark = ","), "\n", "(", per, ")"))
+
+  
+# plot
+
+ggplot(df6.2, aes(x = reorder(products, -total_revenue), 
+                  y = total_revenue, fill = products, colour = products)) +
+  geom_bar(stat = "identity", alpha = 0.5) +
+  geom_text(aes(label = lbl), colour = "black", vjust = -0.3) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  scale_y_continuous(lim = c(0, 800000),  
+                     labels = function(x)paste0("$", {x/1000}, "k")) +
+  labs(title = "Figure 9. Performance of Each Product Category",
+       x = "Product Category",
+       y = "Total Revenue")
+
+
+```
+
+### 6.3 Which marketing campaign is most successful?
+
+There are actually 6 marketing campaigns in the dataset, including the 5 campaigns that have already been launched and the last marketing campaign is actually the column "Response". Refer to section 4.2. 
+
+The last marketing campaign was the most successful campaign with acceptance rate at 14.91%. It is a value that is nearly doubling the acceptance rate of most of the other marketing campaigns launched. 
+
+
+```{r, warning=FALSE, message=FALSE, fig.align='center'}
+
+# Set up data frame 
+
+df6.3 <- md2 %>%
+  dplyr::select(ID, AcceptedCmp1, AcceptedCmp2, AcceptedCmp3, AcceptedCmp4, AcceptedCmp5, Response) %>% 
+  pivot_longer(c(AcceptedCmp1, AcceptedCmp2, AcceptedCmp3, AcceptedCmp4, AcceptedCmp5, Response),
+               names_to = "Campaign",
+               values_to = "Reaction")  # Reaction 1 = accepted the offer, 0 means otherwise
+
+df6.3.2 <- df6.3 %>% 
+  group_by(Campaign) %>% 
+  summarise(Count = n(),
+            Acceptance_rate = sum(Reaction)/Count*100,
+            Acceptance_rate2 = paste0(round(sum(Reaction)/Count*100, 2), "%")) %>% 
+  mutate(Campaign = fct_recode(Campaign,
+         "First" = "AcceptedCmp1",
+         "Second" = "AcceptedCmp2",
+         "Third" = "AcceptedCmp3",
+         "Fourth" = "AcceptedCmp4",
+         "Fifth" = "AcceptedCmp5",
+         "Last" = "Response"))
+  
+
+# plot
+
+ggplot(df6.3.2, aes(x = Campaign, y = Acceptance_rate, group = 1)) +
+  geom_point(stat = "identity", size = 3.5, colour = "purple") +
+  geom_path(linetype = 2, size = 1, colour = "purple") +
+  geom_label_repel(aes(label = Acceptance_rate2), nudge_y = 2) +
+  theme_classic() +  
+  scale_y_continuous(lim = c(0, 20), breaks = seq(0, 20, 4)) +
+  labs(title = "Figure 10. Accentance Rates of Each Marketing Campaign",
+       y = "Acceptance Rate (%)") +
+  theme(axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        axis.title.y = element_text(margin = margin(0, 10, 0, 0)),
+        plot.title = element_text(face = "bold"))
+  
+
+```
+
+### 6.4 Which channels are underperforming?
+
+There are 3 sales channels recorded in the given dataset, the company website, catalog, and in-store purchase. Catalog was the most underperforming sale channel, followed by purchases made through company web. Most purchases were made in store. 
+
+
+```{r, warning=FALSE, message=FALSE, fig.height=5}
+
+# set up dataframe for this section
+
+df6.4 <- md2 %>% 
+  dplyr::select(NumWebPurchases, NumCatalogPurchases, NumStorePurchases) %>% 
+  rename("Web" = "NumWebPurchases",
+         "Catalog" = "NumCatalogPurchases",
+         "In_store" = "NumStorePurchases") %>% 
+  pivot_longer(c(Web, Catalog, In_store),
+               names_to = "channels",
+               values_to = "No_of_purchases") 
+
+df6.4 <- df6.4 %>% 
+  group_by(channels) %>% 
+  summarise(total_no_of_purchases = sum(No_of_purchases))
+
+# plot the graph
+
+ggplot(df6.4, aes(x = reorder(channels, -total_no_of_purchases), y = total_no_of_purchases)) +
+  geom_bar(stat = "identity", fill = "white", aes(colour = channels), size = 1) +
+  geom_text(aes(label = channels), 
+            vjust = -2.5, fontface = "bold") +
+   geom_text(aes(label = paste0("Count: ", prettyNum(total_no_of_purchases, big.mark = ","))), 
+            vjust = -1) +
+  theme_minimal() +
+  labs(title = "Figure 11. Comparison of Sale Channels",
+       x = "Sale Channels",
+       y = "Total No. of Purchases") +
+  theme(plot.margin = unit(c(1,1,1,1), "cm"),
+        plot.title = element_text(vjust = 2, hjust = 0.5, face = "bold"),
+        legend.position = "none") +
+  scale_y_continuous(lim = c(0, 15000),
+                     breaks = seq(0, 15000, 2000))
+  
+  
+
+
+```
+
+
+## 7 STATISTICAL ANALYSIS
+
+### 7.1 Testing for multicollinearity 
+
+It is a preliminary step before statistical analysis starts at section 7.2. This section is to check correlations between numerical independent variables within the dataset to avoid significant pairs being used in the same model, as it would make coefficient estimates unstable and creating invalid statistical results. It is known as multicollinearity, [detail](https://blog.minitab.com/en/understanding-statistics/handling-multicollinearity-in-regression-analysis ).   
+
+
+#### 7.1.1 Correlation assessment
+
+The rule of thumb is that if **correlation is greater than 0.8** between two independent variables, then multicollinearity would exist. Following table successfully present the correlation between each numerical variables in the dataset. 
+
+One can just look for correlation value that is 0.8 but not equal to 1, then refer to the variable pair that associated with this value.  
+
+```{r}
+
+# Filter non-numerical and binary variable, to select only numerical variables (predictors) to test relationships among themselve. 
+
+df7.1 <- md2 %>%  dplyr::select(Year_Birth, Age_atRegister, Income, Kidhome, Teenhome, MntWines, MntFruits, MntMeatProducts, MntFishProducts, MntSweetProducts, MntGoldProds, NumDealsPurchases, NumWebPurchases, NumCatalogPurchases, NumStorePurchases, NumWebVisitsMonth, Response) %>% 
+  ungroup()
+
+# Correlation test of each pair
+
+datatable(round(cor(df7.1),2))
+
+```
+Though inspecting the table visually is an option, but I would use code to done the job for me. Following codes (click the right "code" button) help me to check the presence of correlation values that are higher than 0.8, and not 1. 
+
+* There is no multicollinearity in the dataset.
+
+```{r}
+# Checking.
+
+cor.table <- data.frame(round(cor(df7.1),2))
+
+cor.table <- cor.table %>% 
+  rownames_to_column(var = "x1") %>% 
+  pivot_longer(c(2:18),
+               names_to = "x2",
+               values_to = "correlation")
+
+# filter to get correlation that is higher than 0.8 but is not 1
+
+cor.table %>% filter(correlation > 0.8 & correlation < 1)
+
+```
+
+#### 7.1.2 Variance Inflation factor (VIF) assessment
+
+As a rule of thumb, VIF should be less than 4 to have no multicollinearity issue (the Pennsylvania State University 2018). The result should be the same as previous correlation analysis. Apart from the first two variables "Year_Birth" and "Age_atRegister", there is no multicollinearity exists in all variables. 
+
+```{r}
+model_vif <- lm(NumStorePurchases ~. , data = df7.1)
+vif(model_vif)
+```
+
+The first two variables are essentially the same thing, I created "age_atRegister" from the "Year_Birth". I will only use one of them in any model because they represent the same information. 
+
+
+### 7.2 Factors that significantly related to in-store purchases
+
+I will explore both the positive and negative relationships, and testing are they statistical significance. 
+
+#### 7.2.1 Data Partitioning 
+
+Following codes split the data into 80% training set and 20% testing set. The training set will be used to build the model to answer this question. The quality of the model will be tested by the result of prediction made on the testing set in terms of RSME (Root Mean Squared Error) and R2. The model will then be used to look for factors that are significantly related to in-store purchases. 
+
+```{r}
+set.seed(123) 
+
+# Create Data partition
+
+training.data <- md2$NumStorePurchases %>% createDataPartition(p = 0.8, list = F)
+
+# Produce train and test set
+
+train.data <- md2[training.data,] 
+test.data <- md2[-training.data,]
+
+```
+
+#### 7.2.2 Building the model and model performance
+
+Building the model with exclusion of variables: ID, Year_Birth, Age_atRegister, Dt_Customer, AcceptedCmp1, AcceptedCmp2, AcceptedCmp3, AcceptedCmp4, AcceptedCmp5, Response. They are either redundant or irrelevant of the context.
+
+```{r}
+
+# Build the model
+
+model721 <- lm(NumStorePurchases ~ . - ID - Year_Birth - Age_atRegister - Dt_Customer - AcceptedCmp1 - AcceptedCmp2 - AcceptedCmp3 - AcceptedCmp4 - AcceptedCmp5 - Response , data = train.data)
+
+# Make the prediction based on the 20% test.data
+
+predictions <- model721 %>% predict(test.data)
+
+```
+
+**Model Performance**
+
+* RMSE - the lower the RMSE, the lower the error, the better the model. The RMSE is 2.12, which is lower than the median of the responding variable, which indicating that it is a good model for prediction.  
+
+```{r}
+RMSE(predictions, test.data$NumStorePurchases)
+median(test.data$NumStorePurchases)
+
+```
+
+* R2 - the higher the R2, the better the squared correlation, the better the model. The correlation is moderate. The best range is generally 0.75 and above. Since RMSE is indicating it is a good model, I will proceed to the next step. 
+
+```{r}
+R2(predictions, test.data$NumStorePurchases)
+
+```
+#### 7.2.3 Summarise the model
+Factors that significantly related (P-value < 0.05) to in-store purchases in a positive way are: 
+
+```{r}
+model721_sum <- summary(model721)
+
+# Extract significant variables (<0.05)
+
+model721_sum_df <- model721_sum$coefficients %>% 
+  data.frame() %>% 
+  dplyr::select(Estimate, Pr...t..) %>% 
+  rename("P_value" = Pr...t..) %>% 
+  filter(P_value < 0.05) %>% 
+  arrange(P_value)
+
+# Positive related predictors
+
+model721_sum_df %>% 
+  filter(Estimate > 0) %>% 
+  arrange(P_value) %>% 
+  kbl %>% 
+  kable_styling(bootstrap_options = c("hover", "bordered")) 
+
+```
+
+  * For every 1 unit increase in the predictors, the number of store purchases will increase by respective estimate.  
+  
+
+Factors that significantly related to In-store purchases in a negative way are:
+
+```{r}
+model721_sum_df %>% 
+  filter(Estimate < 0) %>% 
+  arrange(P_value) %>% 
+  kbl %>% 
+  kable_styling(bootstrap_options = c("hover", "bordered"))
+
+```
+
+  * For every 1 unit increment in the predictors, the number of store purchases will decrease by respective estimate.  
+
+
+****
+
+
+### 7.3 Does US's purchasing power significantly better than the rest of the world in terms of total purchases ?
+
+#### 7.3.1 Comparing total purchases PER CUSTOMER in different country**
+
+A column of new variable "total_purchases" will be synthesied using "NumWebPurchases", "NumCatalogPurchases", and "NumStorePurchases". Following codes create the new variable (click the right "code" button).
+
+```{r}
+
+# set up data frame
+
+df7.3 <- md2 %>% 
+  dplyr::select(Country, NumWebPurchases, NumCatalogPurchases, NumStorePurchases) %>% 
+  mutate(total_purchases = NumWebPurchases + NumCatalogPurchases + NumStorePurchases) %>% 
+  dplyr::select(-NumWebPurchases, -NumCatalogPurchases, -NumStorePurchases)
+ 
+```
+
+**Building the model**
+
+Following codes build the model.  
+
+```{r}
+model7.3 <- aov(total_purchases ~ Country, data = df7.3)
+
+```
+
+#### 7.3.2 Assumption tests
+
+**Normality test with Q-Q plot**
+
+The assumption of residuals normality is violated based on following Q-Q plot. 
+
+```{r}
+df7.3$residuals <-  model7.3$residuals
+
+ggplot(df7.3, aes(sample = residuals)) +
+  stat_qq_band() +
+  stat_qq_line() +
+  stat_qq_point() +
+  labs(title = "Figure 12. QQ-plot",
+       subtitle = "Shaded region = 95% confidence interval for Normality") +
+  theme(plot.title = element_text(face = "bold"))
+
+
+```
+
+**Variance test with Levene's test**
+
+Levene's test shows that the variance of total purchase in each country are the similar, without significant differences with a p-value of larger than 0.05. 
+
+```{r}
+leveneTest(df7.3$total_purchases, df7.3$Country)
+
+```
+
+#### 7.3.4 Kruskal Wallis statistical test
+
+A kruskal wallies test is selected as the omnibus test. The result shows that there is no significant difference (P-value = 0.4004) among countries in term of total purchases per customer. 
+
+Therefore, we have not enough significant evidence to say that customer in a country can purchase more items than another country in this dataset. Customers located in a country that has less customers from the company is able to purchase similar or more items than a country that has many customers from the company. 
+
+```{r}
+kruskal.test(df7.3$total_purchases, df7.3$Country)
+
+```
+
+#### 7.3.5 Visualisation
+
+In term of total purchase by count, US ranked the second last country.
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+
+df7.3.2 <- df7.3 %>% 
+  group_by(Country) %>% 
+  summarise(total_purchases_country = sum(total_purchases))
+
+
+ggplot(df7.3.2, aes(x = reorder(Country, -total_purchases_country), y = total_purchases_country, fill = Country)) +
+  geom_bar(stat = "identity") +  
+  scale_fill_manual(values = c("darkgreen", "darkgreen", "darkgreen", "darkgreen",
+                               "darkgreen", "darkgreen", "darkgreen", "orange")) +      # the location of US level is 7th
+  geom_text(aes(label = total_purchases_country), vjust = -1) +
+  scale_y_continuous(lim = c(0, 15000)) +
+  labs(x = "Country",
+       y = "Total Purchases (Count)",
+       title = "Figure 13. Comparison of Total purchases in each Country") +
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold"))
+
+
+```
+However, US ranked the second in term of average purchase per customer (figure 14). It suggests that US customers have slightly better purchasing power than the rest of the World in terms of total purchases, but not statistical significance. 
+
+```{r, fig.width= 10, fig.height=5, message=FALSE, warning=FALSE, fig.align='center'}
+
+df7.3.3 <- df7.3 %>% 
+  group_by(Country) %>% 
+  summarise(count = n(),
+            total_purchase_country = sum(total_purchases),
+            average_purchase_customer = round(total_purchase_country/count, 2)) %>% 
+  mutate(x_label = paste0(Country, "\n", "(n = ", count, ")"))
+
+ggplot(df7.3.3, aes(x = x_label, y = average_purchase_customer, colour = Country)) +
+  geom_point(shape = 21, size = 5) +
+  geom_text_repel(aes(label = average_purchase_customer), fontface = "bold") +
+  theme_classic() +
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold", vjust = 2),
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        axis.title.y = element_text(margin = margin(0, 10, 0, 0))) +
+  scale_colour_manual(values = c("darkgreen", "darkgreen", "darkgreen", "darkgreen",
+                               "darkgreen", "darkgreen", "darkgreen", "orange")) +
+  labs(title = "Figure 14. US Customer Buy More in Average than Most of Country",
+       x = "Country",
+       y = "Average purchase per Customer")
+
+```
+
+ 
+### 7.4 Are gold lovers prefer to shop in store?
+
+One of the supervisors associated with the dataset insists that people who buy gold are more conservative. Therefore, people who spent an above average amount on gold in the last 2 years would have more in store purchases. I will justify or refute this statement using an appropriate statistical test in this section. 
+
+The average (mean) amount spent on gold is 44.02. Therefore, the supervisor is claiming that any customer who spent above this amount of money on gold will have more in store purchases. 
+
+```{r}
+
+# set up data frame
+
+df7.4 <- md2 %>% 
+  dplyr::select(MntGoldProds, NumStorePurchases)
+
+# average 
+
+summary(df7.4$MntGoldProds)
+
+```
+
+#### 7.4.1 Visualisation
+
+Following graph shows that many customers who have spent above average amount on gold ""Above_average"" purchased more items in the store than who spent less than the average on gold. The mean and median of the group "Above_average" are higher than the group "Below_average". However, is it statistically significant? 
+
+```{r, fig.width=8, fig.height=5, message=FALSE, warning=FALSE, fig.align='center'}
+
+# set up dataframe
+
+df7.4 <- df7.4 %>% 
+  mutate(
+    Group = case_when(
+    MntGoldProds > 44.02 ~ "Above_average", 
+    TRUE ~ "Below_average"),
+    Group = factor(Group)
+    ) %>% 
+  group_by(Group) %>% 
+  mutate(count = n(),
+         xlab = paste0(Group, "\n", "(n = ", count, ")"))
+
+
+# plot
+
+ggplot(df7.4, aes(x = xlab, y = NumStorePurchases, colour = xlab)) +
+  geom_jitter(alpha = 0.5) +
+  geom_boxplot(alpha = 0.5, colour = "black", size = 1.5, outlier.shape = NA) +
+  theme_classic() +
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold", vjust = 2),
+        plot.subtitle = element_text(vjust = 2),
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        axis.title.y = element_text(margin = margin(0, 10, 0, 0))) +
+  labs(title = "Figure 15. Number of Store Purchase vurses 2 Categories of Gold Buyer",
+       subtitle = "Gold buyers categorised into 1) Who spend above, (2) and who spend below average amount on gold",
+       y = "Number of Store Purchases (Count)",
+       x = "Gold Buyer") +
+  stat_boxplot(geom = "errorbar", size = 1.5, colour = "black") +
+  stat_summary(fun = "mean", shape = 4, colour = "black", size = 3, stroke = 2)
+
+
+```
+
+It can be argued that "Below_average" has a lot more data points than "Above_average", the comparison might be unfair. To make it become a fairer comparison, I randomly select 694 samples from the 1546 samples in the group of "Below_average", and creating following figure. 
+
+```{r, fig.width=8, fig.height=5, message=FALSE, warning=FALSE, fig.align='center'}
+
+# set up data frame 
+
+df7.4.2 <- df7.4 %>%
+  dplyr::select(Group, NumStorePurchases) %>% 
+  group_by(Group) %>% 
+  sample_n(694) %>% 
+  mutate(count = n(),
+         xlab = paste0(Group, "\n", "(n = ", count, ")"))
+
+# plot
+
+ggplot(df7.4.2, aes(x = xlab, y = NumStorePurchases, colour = xlab)) +
+  geom_jitter(alpha = 0.5) +
+  geom_boxplot(alpha = 0.5, colour = "black", size = 1.5, outlier.shape = NA) +
+  theme_classic() +
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold", vjust = 2),
+        plot.subtitle = element_text(vjust = 2),
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        axis.title.y = element_text(margin = margin(0, 10, 0, 0))) +
+  labs(title = "Figure 16. Number of Store Purchase vurses 2 Categories of Gold Buyer",
+       subtitle = "Gold buyers categorised into 1) Who spend above, (2) and who spend below average amount on gold",
+       y = "Number of Store Purchases (Count)",
+       x = "Gold Buyer") +
+  stat_boxplot(geom = "errorbar", size = 1.5, colour = "black") +
+  stat_summary(fun = "mean", shape = 4, colour = "black", size = 3, stroke = 2)
+
+
+```
+Now, two groups have equal sample size. Reduction of sample size from 1546 to 694 in the group of "Below_average" leads to a slight reduction of mean by 0.105. Still, the interpretation of the graph remains the same as figure 15. 
+
+```{r}
+
+df7.4 %>% group_by(Group) %>% summarise(ave = mean(NumStorePurchases))
+df7.4.2 %>% group_by(Group) %>% summarise(ave = mean(NumStorePurchases))
+4.903622 - 4.798271
+
+```
+
+#### 7.4.2 Building a model
+
+```{r}
+model742 <- aov(NumStorePurchases ~ Group, data = df7.4.2)
+summary(model742)
+
+```
+
+#### 7.4.3 Assumption tests
+
+**Normality test with Q-Q plot and Shapiro-Wilk test**
+
+Large amount of data points are out of the shaded region of following Q-Q plot, and do not form and match the straight line. It suggests that the data residuals are not normality distributed. 
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+df7.4.2$residuals <-  model742$residuals
+
+ggplot(df7.4.2, aes(sample = residuals)) +
+  stat_qq_band() +
+  stat_qq_line() +
+  stat_qq_point() +
+  labs(title = "Figure 16. QQ-plot",
+       subtitle = "Shaded region = 95% confidence interval for Normality") +
+  theme(plot.title = element_text(face = "bold"))
+
+```
+
+A shapiro-wilk test is also carried out and show the same result that the residuals in the dataset are not normally distributed.
+
+```{r}
+by(df7.4.2$NumStorePurchases, df7.4.2$Group, shapiro.test)
+
+```
+
+**Variance test with Levene’s test**
+
+The variance between two gold buyer groups is also significant different based on following Levene's test (P-value < 0.05). The variance between both groups are not equal. 
+
+```{r}
+leveneTest(df7.4.2$NumStorePurchases, df7.4.2$Group)
+
+```
+
+#### 7.4.4 Mann-Whitney test
+
+For testing groups that do not have their data points normality distributed and do not have their variances equal to each other, Mann-Whitney test is selected. 
+
+```{r}
+wilcox.test(df7.4.2$NumStorePurchases ~ df7.4.2$Group)          
+# default of wilcox.test is for unpaired test, non-normally distributed, unequal variances pair.
+
+```
+
+Statistical result from the test supports the supervisor's claim that people who spent an above average amount on gold in the last 2 years would have more in store purchases, with a p-value of less than 0.05. 
+
+
+### 7.5 Consumption of married PhD candidates on Fish
+
+Fish has Omega 3 fatty acids which are good for the brain. Accordingly, do "Married PhD candidates" have a significant relation with amount spent on fish? What other factors are significantly related to amount spent on fish?
+
+#### 7.5.1 Married PhD candidates vs others in amount spent on fish
+
+Following summary shows that the sample size between the married PhD group and the other customer groups have a substantial different in total sample count. To make the comparison fairer, I will randomly select 192 samples from the 2048 samples of the "Others" group.  
+
+```{r}
+# set up data frame
+
+df751 <- md2 %>% 
+  dplyr::select(Education, Marital_Status, MntFishProducts) %>%
+  mutate(group = paste0(Education, Marital_Status)) %>% 
+  mutate(group2 = case_when(
+    group == "PhDMarried" ~ "Married_PhD_candidates",
+    TRUE ~ "Others"
+  ),
+  group2 = as.factor(group2))
+
+# summarise sample count
+
+df751 %>% 
+  group_by(group2) %>% 
+  summarise(count = n()) 
+
+```
+
+**Random Sampling**
+
+Following codes complete the random sampling of 192 samples from the "Others" group.
+
+```{r}
+
+df751_192 <- df751 %>% 
+  dplyr::select(group2, MntFishProducts) %>% 
+  group_by(group2) %>% 
+  sample_n(192) 
+
+```
+
+**Visualisation**
+
+Figure belows show that the mean and median of the group "Others" are slightly higher than the group of married PhD. 
+
+```{r, message=FALSE, warning=FALSE, fig.align='center'}
+# set up x label
+
+df751_192 <- df751_192 %>% 
+  group_by(group2) %>% 
+  mutate(count = n(),
+         label_x = paste0(group2, "\n", "(n =", count, ")"))
+
+# plot
+
+ggplot(df751_192, aes(x = label_x, y = MntFishProducts, fill = group2)) +
+  geom_jitter() +
+  geom_boxplot(outlier.shape = NA, alpha = 0.9, size = 1) +
+  stat_summary(fun = "mean", shape = 4, size = 2, colour = "blue", stroke = 2) +
+  labs("Figure 17. Married PhD Candidates have lesser mean and median") +
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(margin = margin(0, 10, 0, 0))) +
+  labs(y = "Amount spent on fish",
+       title = "Figure 17. Married PhD Candidates spent less on Fish",
+       subtitle = "In term of mean (x sign) and median (the thicker line in boxplots)")
+
+```
+
+**Model building**
+
+Codes below build the model for this section (click the right button).
+
+```{r}
+model_192 <- aov(MntFishProducts ~ group2, data = df751_192)
+
+```
+
+
+**Normality testing with Shapiro-Wilk test**
+
+Shapiro-Wilk test suggests that data between the two groups are not normally distributed.
+
+```{r}
+by(df751_192$MntFishProducts, df751_192$group2, shapiro.test)
+
+```
+
+**Variance test with Levene’s test**
+
+Levene's test concludes that the spread of variance between the two groups of data are not equal, with a P-value of lower than 0.05, and rejects the null hypothesis that the variances between the groups are equal. 
+
+```{r}
+leveneTest(df751_192$MntFishProducts, df751_192$group2)
+
+```
+
+**Mann-Whitney test**
+
+Base on above assumption tests, Mann-Whitney test is selected as the two-sample test, it is written as wilcox.test in R as below. 
+
+* The P-value of 0.0003503 concludes that married PhD candidates spent significantly less than other customers on fish.
+
+```{r}
+wilcox.test(df751_192$MntFishProducts ~ df751_192$group2)
+
+```
+
+#### 7.5.2 What other factors are significantly related to amount spent on fish? 
+
+There are many variables in the dataset can be related to the amount spent on fish. However, some variables can be either redundant or irrelevant to this context. I am removing them using following code (click the right botton).
+
+```{r}
+
+# set up df
+
+df752 <- md2 %>% dplyr::select(-c(ID, Year_Birth, Age_atRegister, Dt_Customer, AcceptedCmp1, AcceptedCmp2, AcceptedCmp3, AcceptedCmp4, AcceptedCmp5, Response))
+
+```
+
+**Create Dummy variables**
+
+Linear regressions need variables to be continuous, and assigning dummy variables (0 or 1) to the levels of categorical variable is a common practice. Fortunately, R will automatically assign dummy data to categorical variables that are in factor type. Alternatively, one create dummy data manually in R. In this section, I will assign dummy data to categorical variables manually to demonstrate my codes. 
+
+Following table indicates successful conversion. The number of variables has been increased from 20 to 41 because each level of categorical data had been extracted and formed their own column with value of 1 (yes for the observation) and 0 (no for the observation). 
+
+```{r}
+
+# Create the dummy data frame
+
+dummy_object <- dummyVars("~.", data = df752)
+dummy752 <- as_tibble(predict(dummy_object, newdata = df752))
+dummy752 <- dummy752 %>% rename("Education.2n_Cycle" = "Education.2n Cycle")
+
+# Display the data frame
+
+datatable(dummy752)
+
+```
+
+**Data Partitioning**
+
+Following codes split the entire dataset (2240 rows) into 80% (1793 rows) train dataset that will be used to build the model and 20% (447 rows) of test dataset to test the model built from the train dataset. 
+
+```{r}
+set.seed(123)
+
+# split the dataset base on the responding variable of this section.
+
+training.data <- dummy752$MntFishProducts %>% createDataPartition(p = 0.8, list = F)
+
+# create training and test dataset
+
+train.data <- dummy752[training.data,]
+test.data <- dummy752[-training.data,]
+
+```
+
+**Model building with step-wise model selection**
+
+There are too many independent variables (40 variables) in the dataset, I will apply a step-wise model selection method that will incorporate forward and backward procedure at the same time. Results show that following 13 variables are significantly related (p-value < 0.05) to the responding variables. These variables will be used to build the model. 
+
+```{r}
+# Building the model 
+model752 <- lm(MntFishProducts ~., data = train.data)
+
+# stepwise model selection that select models based on P-value (0.05)
+
+ols_step_both_p(model = model752,
+                pent = 0.05,
+                prem = 0.05)
+
+```
+Building the model using above variables (click the right button). 
+
+```{r}
+model752_selected <- lm(MntFishProducts ~ MntFruits + MntSweetProducts + MntMeatProducts + NumCatalogPurchases + Marital_Status.Absurd + Education.PhD + NumWebVisitsMonth + Teenhome + NumStorePurchases + Education.2n_Cycle + Country.ME + MntWines, data = train.data)
+
+```
+
+**Model performance**
+
+* RMSE - the lower the RMSE, the better the model. The RMSE is 38.15 which is higher than the median 12. It indicating a higher error rate.  
+
+```{r}
+predictions <- model752_selected %>% predict(test.data)
+
+# RMSE
+
+RMSE(predictions, test.data$MntFishProducts)
+median(test.data$MntFishProducts)
+
+```
+* R2 has a moderate squared correlation of 0.497. 
+
+```{r}
+R2(predictions, test.data$MntFishProducts)
+
+```
+
+**Summarise the model**
+
+```{r}
+
+summary(model752_selected)
+
+```
+Base on the best model from the step-wise selection, variables that significantly related to "MntFishProducts" (Amount spent on fish in the last 2 years) in a **positive** way are:
+
+```{r}
+model752_sum <- summary(model752_selected)
+
+model752_sum$coefficients %>% 
+  data.frame() %>%
+  dplyr::select(Estimate, Pr...t..) %>% 
+  rename("P_value" = Pr...t..) %>% 
+  filter(Estimate > 0) %>% 
+  arrange(P_value) %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("hover", "bordered")) 
+
+
+```
+* Insights: 
+
+  * The amount spent on fish will increase with increasing amount spent on fruits, sweet, amd meat. 
+  
+  * The amount spent on fish will increase with increasing sales through catalog and store. 
+  
+  * Marital Status of absurd, country (ME) and Education of 2n_Cycle are also significant related the the amount that customers spent on fish.  
+
+
+Variables that significantly related to "MntFishProducts" (Amount spent on fish in the last 2 years) in a **negative** way are:
+
+```{r}
+model752_sum$coefficients %>% 
+  data.frame() %>%
+  dplyr::select(Estimate, Pr...t..) %>% 
+  rename("P_value" = Pr...t..) %>% 
+  filter(Estimate < 0) %>% 
+  arrange(P_value) %>% 
+  filter(P_value < 0.05) %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("hover", "bordered")) 
+
+```
+
+* Insights:
+
+  * Increase of customers with PhD background, number of teenagers at home, and number of web visiting month by customers negatively related with the amount spent on fish.
+  
+  * The increase of any of these variables will lead to decrease in the amount spent on fish by customers. 
+
+
+
+### 7.6 Is there a significant relationship between geographical regional and success of a campaign?
+
+Graph below shows that most campaigns across countries have low acceptance rate and are mostly less than 15%. The country "ME" has only 3 customers, the sample size is too small to represent the acceptance rate of the country. Other countries that have minimum of 100 customers. 
+
+**Visualisation**
+
+```{r, message=FALSE, warning=FALSE, fig.height=5, fig.width=9}
+# set up dataframe
+
+df76 <- md2 %>% 
+  dplyr::select(Country, AcceptedCmp1, AcceptedCmp2, AcceptedCmp3, AcceptedCmp4, AcceptedCmp5, Response)
+
+df76_viz <- df76 %>%
+  rename("Camp1" = AcceptedCmp1,
+         "Camp2" = AcceptedCmp2,
+         "Camp3" = AcceptedCmp3,
+         "Camp4" = AcceptedCmp4,
+         "Camp5" = AcceptedCmp5,
+         "LastCamp" = Response) %>% 
+  pivot_longer(c(Camp1, Camp2, Camp3, Camp4, Camp5, LastCamp),
+               names_to = "Cmp", 
+               values_to = "result") %>% 
+  mutate(Cmp = as.factor(Cmp)) %>% 
+  group_by(Country, Cmp) %>% 
+  summarise(count = n(), 
+            rate = round(sum(result)/count*100, 1)) %>% 
+  mutate(xlabel = paste0(Country, "\n", "(n =", count, ")"),
+         barlabel = paste0(rate, "%"))
+  
+# plot
+
+ggplot(df76_viz, aes(x = xlabel, y = rate, fill = Cmp)) +
+  geom_hline(yintercept = 15, linetype = 2, colour = "grey") +
+  geom_bar(stat = "identity", position = position_dodge(), colour = "black") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.75),
+        legend.background = element_rect(colour = "black"),
+        plot.title = element_text(face = "bold", vjust = 2),
+        axis.title.y = element_text(margin = margin(0, 8, 0, 0))) +
+  scale_y_continuous(labels = function(x){paste0(x, "%")},
+                     lim = c(0, 70)) +
+  labs(title = "Figure 18. Acceptance Rate of Marketing Campaigns Across Countries",
+       fill = "Campaign",
+       y = "Acceptance Rate",
+       x = "Country") 
+
+
+```
+
+**Generalised Linear Models (GLM)**
+
+Logistic regression is performed using GLM's binomial family on the effect of countries to 6 respective marketing campaign.
+
+The results show that there is no significant relationship between geographical regions and the success of a campaign, with a P-value of all countries in all marketing campagins being higher than 0.05. It indicates insufficient evidence to reject the null hypothesis that geographical regionas has no relation to the success of marketing campaign. 
+
+1. Compare campaign 1 across countries.
+
+* Result: There is not enough evidence to reject the null hypothesis and I conclude that in campaign 1, there is no effect of country on campaign success. P value of all countries are higher than 0.05.
+
+```{r}
+# Set up data frame
+
+df76_2 <- df76 %>% 
+  rename("Camp1" = AcceptedCmp1,
+         "Camp2" = AcceptedCmp2,
+         "Camp3" = AcceptedCmp3,
+         "Camp4" = AcceptedCmp4,
+         "Camp5" = AcceptedCmp5,
+         "LastCamp" = Response) %>%
+  mutate_if(is.double, as.factor)
+
+# Use the binomial family of GLM to make the glm model carry out logistic regression 
+
+model1 <- glm(Camp1 ~ Country, data = df76_2, family = "binomial")
+summary(model1)
+
+```
+
+2. Compare campaign 2 across countries.
+
+* Result: There is not enough evidence to reject the null hypothesis and I conclude that in campaign 2, there is no effect of country on campaign success. P value of all countries are higher than 0.05.
+
+```{r}
+model2 <- glm(Camp2 ~ Country, data = df76_2, family = "binomial") 
+summary(model2)
+
+```
+3. Compare campaign 3 across countries.
+
+* Result: There is not enough evidence to reject the null hypothesis and I conclude that in campaign 3, there is no effect of country on campaign success. P value of all countries are higher than 0.05.
+
+```{r}
+model3 <- glm(Camp3 ~ Country, data = df76_2, family = "binomial") 
+summary(model3)
+
+```
+
+4. Compare campaign 4 across countries.
+
+* Result: Apart from country "Ca", there is not enough evidence to reject the null hypothesis and I conclude that in campaign 4, there is no effect of country on campaign success. P value of all countries are higher than 0.05.
+
+* Most countries have no relation to the success of marketing campaign. Only Canada has a week significant P value of 0.0478 that very close to 0.05 to reject the null hypothesis. 
+
+```{r}
+model4 <- glm(Camp4 ~ Country, data = df76_2, family = "binomial") 
+summary(model4)
+
+```
+
+5. Compare campaign 5 across countries.
+
+* Result: There is not enough evidence to reject the null hypothesis and I conclude that in campaign 5, there is no effect of country on campaign success. P value of all countries are higher than 0.05.
+
+```{r}
+model5 <- glm(Camp5 ~ Country, data = df76_2, family = "binomial") 
+summary(model5)
+
+```
+
+6. Compare the last marketing campaign across countries.
+
+* In the last Campaign, only the country "ME" is significantly different from other countries in term of relation to the acceptance rate, however the there are only 3 samples in this country to generate the statistical outcome, the sample size is too small, and the result can be inaccurate. 
+
+* Result: In most country, there is not enough evidence to reject the null hypothesis and I conclude that in the last campaign, there is no effect of country on campaign success. P value of all countries are higher than 0.05.
+
+```{r}
+modelLast <- glm(LastCamp ~ Country, data = df76_2, family = "binomial") 
+summary(modelLast)
+
+```
+
+
+
+## 8 CONCLUSION
+
+Conclusion for exploratory data analysis (EDA):
+
+* Most customers are in mature age between 30 to 55.    
+
+* 51% of the customers are from Spain, which is the largest pool of customer. 
+
+* 50.3% of customers have education level of "graduation" level.  
+
+* 71.5% of customers have at least 1 children at home (being either 1 kid or 1 teen in the family). 
+
+* 50% of customers have income falls approximately between \$35k to \$70k.  
+
+* Wine is the best selling products of the company which contributing 50.15% to the total revenue, followed by 27.56% of meat and then the 7.27% of gold.    
+
+* All 6 marketing campagins are not doing very well with acceptance rates of lower than 15%. The last marketing campaign was the most successful with acceptance rate 14.91%. The rest of all other campaigns have acceptance rate close to or below 7%. 
+
+* In store sales is the most performing channels, followed by web, and then the last sale channel, catalog.  
+ 
+Conclusion for statistical analysis:
+
+* Number of in-store purchase has a significant positive relationship with the amount of wine, fruit, fish, and sweet sold, as well as deals, purchases made through web and the income of customers. Number of in-store purchase has a significant negative relationship with number of visits to company's website by the customer, number of kid at home, sales through catelog and interestingly, the amount of meat sold.  
+
+* Purchasing power of customers from the US do not significantly different from the rest of the world in terms of total purchase per customer, at a P-value of 0.4004. In term of total purchase, US ranked the second last country. However, purchasing power of US customers ranked the second in term of average purchase per customer (13.51).  
+
+* People who spent an above average amount on gold in the last 2 years have more in store purchases, with a p-value of less than 0.05. 
+
+* Married PhD candidates spent significantly less than other customer groups on fish, with a p-value of less than 0.05. Other factors that significantly related to amount spent on fish in a positive way are the amount spent on fruits, sweet, amd meat, numbers of purchases made through catalog and store, marital status of absurd, country (ME), and Education of 2n_Cycle. Other factors that significantly related to amount spents on fish in a negative way are the number of PhD customers, number of teens at home, and number of web visits by the customers. 
+
+* Logistic regression was carried out for 6 marketing campaigns and result shows that there is no significant relationship between geographical regional and success of a campaign. 
+
+
+## 9 LEGALITY
+
+This is a personal project created and designed for skill demonstration and non-commercial use only. All photos in this project, such as those that applied as the thumbnail are only for demonstration, they are not related to the dataset, the location where the data were collected, and the results of this analysis.
+
+## 10 REFERENCE
+
+Australia Bureau of Statistics 2014, *Age Standard*, viewed 26 July 2021, https://www.abs.gov.au/statistics/standards/age-standard/latest-release  
+
+Daoud J 2021, *EDA & Statistics Analysis with Marketing Data*, viewed 26 July 2021, https://www.kaggle.com/jackdaoud/eda-statistics-analysis-with-marketing-data. 
+
+Crockett J 2021, *Marketing Analytics EDA task [Final]*, viewed 28 July 2021, https://www.kaggle.com/jennifercrockett/marketing-analytics-eda-task-final
+
+Minitab Blog Editor 2013, *Enough Is Enough! Handling Multicollinearity in Regression Analysis*, viewed 26 July 2021, https://blog.minitab.com/en/understanding-statistics/handling-multicollinearity-in-regression-analysis 
+
+The Pennsylvania State University 2018, *10.7 - Detecting Multicollinearity Using Variance Inflation Factors*， viewed 27 July 2021, 
+https://online.stat.psu.edu/stat462/node/180/
+
+
+
+## 11 ACKNOWLEDGEMENT
+
+* Thank you Dr. Omar Romero-Hernandez for providing this dataset. 
+

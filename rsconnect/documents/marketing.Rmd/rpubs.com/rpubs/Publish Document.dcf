@@ -1,0 +1,11 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/796009/299ae1ff6506433fb80671047aa4458a
+bundleId: https://api.rpubs.com/api/v1/document/796009/299ae1ff6506433fb80671047aa4458a
+url: http://rpubs.com/kar_ng/796009
+when: 1628001608.80258
+lastSyncTime: 1628001608.80258
