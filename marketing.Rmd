@@ -1,20 +1,19 @@
 ---
 title: "Marketing Analytics"
 author: "Kar Ng"
-date: "7/21/2021"
+date: "2021"
 output: 
-  html_document: 
-    code_folding: hide
+  github_document: 
     toc: true
     toc_depth: 4
-    toc_float: true
+always_allow_html: yes
 
 ---
 
 
 ***
 
-![](C:\Users\karho\Desktop\R and Stats\R for online presence\20210720_p10_MarketingAnalytics\marketing\pic2_thumbnail.JPG.png)
+![](https://raw.githubusercontent.com/KAR-NG/marketing/main/pic2_thumbnail.JPG.png)
 
 
 ***
@@ -55,7 +54,7 @@ Results from statistical analysis reveal in-store purchases is significantly aff
 
 <br/>
 
-![](C:\Users\karho\Desktop\R and Stats\R for online presence\20210720_p10_MarketingAnalytics\marketing\pic1_highlight.JPG)
+![](https://raw.githubusercontent.com/KAR-NG/marketing/main/pic1_highlight.png)
 
 <br/>
 
