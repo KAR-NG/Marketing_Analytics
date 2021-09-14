@@ -112,7 +112,7 @@ This project uses a public dataset from *Kaggle*. *Kaggle* is a professional web
 
 ### 4.1 Data import
 
-Following codes import the dataset (click the *code* button). Table below is an indication of successful data import. 
+Following codes import the dataset. Table below is an indication of successful data import. 
 
 ***
 
@@ -120,7 +120,7 @@ Following codes import the dataset (click the *code* button). Table below is an 
 ```{r, message=FALSE, warning=FALSE}
 
 marketing_data <- read_csv("marketing_data.csv")
-datatable(marketing_data)
+head(marketing_data)
 
 ```
 
@@ -260,7 +260,7 @@ Variable that need to be in date (date) data type:
 
 ### 5.1 Data type conversion
 
-This section continues with the work mentioned in the last section to convert some variables into their rightfully type so that the data analysis can be more efficient and accurate. Following codes complete the task (click the right button).
+This section continues with the work mentioned in the last section to convert some variables into their rightfully type so that the data analysis can be more efficient and accurate. Following codes complete the task.
 
 ```{r}
 # I will retain the original dataset as marketing_data and give a new object named "md".
@@ -284,7 +284,7 @@ md <- md %>%
 
 ```
 
-Checking the type of these variables using following code (click the right botton). Following results show that the conversions have been successful
+Checking the type of these variables using following code. Following results show that the conversions have been successful
 
 ```{r}
 check <- md %>% dplyr::select(Education, Marital_Status, Country, Dt_Customer, Income)
@@ -306,7 +306,7 @@ sapply(check2, levels)
 ```
 There are no any written form of missing value in all variables (such as "Null", "Missing_value", "Blank", or whatever relevant). The column "ID" has its original data type as numeric at the absence of any alphabetical string data, hence it does not contain any written form of missing value. 
 
-Still, I am able to check is there any character data (such as "Null", "Missing_value", "Blank", or whatever relevant) falling into the **ID** column as well, by running following code (click the right button). The result is 0, which indicates that there is no character data in the column of **ID**.
+Still, I am able to check is there any character data (such as "Null", "Missing_value", "Blank", or whatever relevant) falling into the **ID** column as well, by running following code. The result is 0, which indicates that there is no character data in the column of **ID**.
 
 ```{r}
 which(str_detect(md$ID, "[[:alpha:]]"))
@@ -415,7 +415,7 @@ md2_check[NA_locate,]
 
 Since there is year of birth recorded in the dataset, an **"age"** column can be pre-prepared just in case if this information is required in the later stages. I compute the age by using the enrollment rate minus the year of birth and synthese a column named **"Age_atRegister"**. A column **"age_group"** has also been synthesised base on the **"Age_atRegister"** column. 
 
-Following code complete the creation (click the right button). 
+Following code complete the creation. 
 
 
 ```{r}
@@ -928,7 +928,7 @@ df7.1 <- md2 %>%  dplyr::select(Year_Birth, Age_atRegister, Income, Kidhome, Tee
 datatable(round(cor(df7.1),2))
 
 ```
-Though inspecting the table visually is an option, but I would use code to done the job for me. Following codes (click the right "code" button) help me to check the presence of correlation values that are higher than 0.8, and not 1. 
+Though inspecting the table visually is an option, but I would use code to done the job for me. Following codes help me to check the presence of correlation values that are higher than 0.8, and not 1. 
 
 * There is no multicollinearity in the dataset.
 
@@ -1064,7 +1064,7 @@ model721_sum_df %>%
 
 #### 7.3.1 Comparing total purchases PER CUSTOMER in different country**
 
-A column of new variable "total_purchases" will be synthesied using "NumWebPurchases", "NumCatalogPurchases", and "NumStorePurchases". Following codes create the new variable (click the right "code" button).
+A column of new variable "total_purchases" will be synthesied using "NumWebPurchases", "NumCatalogPurchases", and "NumStorePurchases". Following codes create the new variable.
 
 ```{r}
 
@@ -1410,7 +1410,7 @@ ggplot(df751_192, aes(x = label_x, y = MntFishProducts, fill = group2)) +
 
 **Model building**
 
-Codes below build the model for this section (click the right button).
+Codes below build the model for this section.
 
 ```{r}
 model_192 <- aov(MntFishProducts ~ group2, data = df751_192)
@@ -1449,7 +1449,7 @@ wilcox.test(df751_192$MntFishProducts ~ df751_192$group2)
 
 #### 7.5.2 What other factors are significantly related to amount spent on fish? 
 
-There are many variables in the dataset can be related to the amount spent on fish. However, some variables can be either redundant or irrelevant to this context. I am removing them using following code (click the right botton).
+There are many variables in the dataset can be related to the amount spent on fish. However, some variables can be either redundant or irrelevant to this context. I am removing them using following code.
 
 ```{r}
 
@@ -1512,7 +1512,7 @@ ols_step_both_p(model = model752,
                 prem = 0.05)
 
 ```
-Building the model using above variables (click the right button). 
+Building the model using above variables. 
 
 ```{r}
 model752_selected <- lm(MntFishProducts ~ MntFruits + MntSweetProducts + MntMeatProducts + NumCatalogPurchases + Marital_Status.Absurd + Education.PhD + NumWebVisitsMonth + Teenhome + NumStorePurchases + Education.2n_Cycle + Country.ME + MntWines, data = train.data)
