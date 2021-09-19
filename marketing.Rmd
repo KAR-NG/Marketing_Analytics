@@ -906,7 +906,7 @@ ggplot(df6.4, aes(x = reorder(channels, -total_no_of_purchases), y = total_no_of
 
 ### 7.1 Testing for multicollinearity 
 
-It is a preliminary step before statistical analysis starts at section 7.2. This section is to check correlations between numerical independent variables within the dataset to avoid significant pairs being used in the same model, as it would make coefficient estimates unstable and creating invalid statistical results. It is known as multicollinearity, [detail](https://blog.minitab.com/en/understanding-statistics/handling-multicollinearity-in-regression-analysis ).   
+The preliminary step before statistical analysis is to check correlations between numerical independent variables within the dataset to avoid significant pairs being used in the same model, as it would make coefficient estimates unstable and creating invalid statistical results. It is known as multicollinearity, [detail](https://blog.minitab.com/en/understanding-statistics/handling-multicollinearity-in-regression-analysis ).   
 
 
 #### 7.1.1 Correlation assessment
