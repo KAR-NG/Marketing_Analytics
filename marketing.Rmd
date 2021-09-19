@@ -1015,6 +1015,7 @@ R2(predictions, test.data$NumStorePurchases)
 
 ```
 #### 7.2.3 Summarise the model
+
 Factors that significantly related (P-value < 0.05) to in-store purchases in a positive way are: 
 
 ```{r}
@@ -1057,6 +1058,52 @@ model721_sum_df %>%
 
 
 ****
+
+### Lasso
+
+```{r}
+
+library(glmnet)
+
+model_lasso <- train(NumStorePurchases ~., train.data,
+                     method = "glmnet",
+                     trControl = trainControl(method = "repeatedcv", 
+                                              number = 10, 
+                                              repeats = 3),
+                     tuneGrid = expand.grid(alpha = 1,
+                                            lambda = 10^seq(-3, 3, length = 100)))
+
+
+model_lasso$bestTune
+plot(model_lasso$finalModel, xvar = "dev", label = T)
+summary(model_lasso$bestTune)
+
+plot(varImp(model_lasso))
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ### 7.3 Does US's purchasing power significantly better than the rest of the world in terms of total purchases ?

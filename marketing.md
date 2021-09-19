@@ -47,6 +47,7 @@ Kar Ng
         -   [7.2.2 Building the model and model
             performance](#722-building-the-model-and-model-performance)
         -   [7.2.3 Summarise the model](#723-summarise-the-model)
+    -   [Lasso](#lasso)
     -   [7.3 Does US’s purchasing power significantly better than the
         rest of the world in terms of total purchases
         ?](#73-does-uss-purchasing-power-significantly-better-than-the-rest-of-the-world-in-terms-of-total-purchases-)
@@ -2685,11 +2686,11 @@ ggplot(df6.4, aes(x = reorder(channels, -total_no_of_purchases), y = total_no_of
 
 ### 7.1 Testing for multicollinearity
 
-It is a preliminary step before statistical analysis starts at section
-7.2. This section is to check correlations between numerical independent
-variables within the dataset to avoid significant pairs being used in
-the same model, as it would make coefficient estimates unstable and
-creating invalid statistical results. It is known as multicollinearity,
+The preliminary step before statistical analysis is to check
+correlations between numerical independent variables within the dataset
+to avoid significant pairs being used in the same model, as it would
+make coefficient estimates unstable and creating invalid statistical
+results. It is known as multicollinearity,
 [detail](https://blog.minitab.com/en/understanding-statistics/handling-multicollinearity-in-regression-analysis).
 
 #### 7.1.1 Correlation assessment
@@ -2699,8 +2700,9 @@ two independent variables, then multicollinearity would exist. Following
 table successfully present the correlation between each numerical
 variables in the dataset.
 
-One can just look for correlation value that is 0.8 but not equal to 1,
-then refer to the variable pair that associated with this value.
+One can just look for correlation values that are 0.8 but not equal to
+1, then refer to the variables that associated with this value. This
+value range indicates possible existence of multicollinearity.
 
 ``` r
 # Filter non-numerical and binary variable, to select only numerical variables (predictors) to test relationships among themselve. 
@@ -2804,9 +2806,9 @@ round(cor(df7.1),2)
     ## NumWebVisitsMonth       0.00
     ## Response                1.00
 
-Though inspecting the table visually is an option, but I would use code
-to done the job for me. Following codes help me to check the presence of
-correlation values that are higher than 0.8, and not 1.
+Though inspecting the table visually is an option, I can also use codes
+to help filtering the data for me. Following codes help me to check the
+presence of correlation values that fall between 0.8 to 1.
 
 -   There is no multicollinearity in the dataset.
 
@@ -2835,7 +2837,10 @@ As a rule of thumb, VIF should be less than 4 to have no
 multicollinearity issue (the Pennsylvania State University 2018). The
 result should be the same as previous correlation analysis. Apart from
 the first two variables “Year\_Birth” and “Age\_atRegister”, there is no
-multicollinearity exists in all variables.
+multicollinearity exists in all variables. The two variables are
+essentially the same thing, I created “age\_atRegister” from the
+“Year\_Birth”. I will only use one of them in any model because they
+represent the same information.
 
 ``` r
 model_vif <- lm(NumStorePurchases ~. , data = df7.1)
@@ -2851,14 +2856,7 @@ vif(model_vif)
     ##     NumWebPurchases NumCatalogPurchases   NumWebVisitsMonth            Response 
     ##            1.871632            2.960579            2.403747            1.147800
 
-The first two variables are essentially the same thing, I created
-“age\_atRegister” from the “Year\_Birth”. I will only use one of them in
-any model because they represent the same information.
-
 ### 7.2 Factors that significantly related to in-store purchases
-
-I will explore both the positive and negative relationships, and testing
-are they statistical significance.
 
 #### 7.2.1 Data Partitioning
 
@@ -3129,6 +3127,67 @@ MntMeatProducts
 
 ------------------------------------------------------------------------
 
+### Lasso
+
+``` r
+library(glmnet)
+```
+
+    ## Loading required package: Matrix
+
+    ## 
+    ## Attaching package: 'Matrix'
+
+    ## The following objects are masked from 'package:tidyr':
+    ## 
+    ##     expand, pack, unpack
+
+    ## Loaded glmnet 4.1-2
+
+``` r
+model_lasso <- train(NumStorePurchases ~., train.data,
+                     method = "glmnet",
+                     trControl = trainControl(method = "repeatedcv", 
+                                              number = 10, 
+                                              repeats = 3),
+                     tuneGrid = expand.grid(alpha = 1,
+                                            lambda = 10^seq(-3, 3, length = 100)))
+```
+
+    ## Warning in nominalTrainWorkflow(x = x, y = y, wts = weights, info = trainInfo, :
+    ## There were missing values in resampled performance measures.
+
+``` r
+model_lasso$bestTune
+```
+
+    ##    alpha     lambda
+    ## 25     1 0.02848036
+
+``` r
+plot(model_lasso$finalModel, xvar = "dev", label = T)
+```
+
+![](marketing_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
+
+``` r
+summary(model_lasso$bestTune)
+```
+
+    ##      alpha       lambda       
+    ##  Min.   :1   Min.   :0.02848  
+    ##  1st Qu.:1   1st Qu.:0.02848  
+    ##  Median :1   Median :0.02848  
+    ##  Mean   :1   Mean   :0.02848  
+    ##  3rd Qu.:1   3rd Qu.:0.02848  
+    ##  Max.   :1   Max.   :0.02848
+
+``` r
+plot(varImp(model_lasso))
+```
+
+![](marketing_files/figure-gfm/unnamed-chunk-39-2.png)<!-- -->
+
 ### 7.3 Does US’s purchasing power significantly better than the rest of the world in terms of total purchases ?
 
 #### 7.3.1 Comparing total purchases PER CUSTOMER in different country\*\*
@@ -3173,7 +3232,7 @@ ggplot(df7.3, aes(sample = residuals)) +
   theme(plot.title = element_text(face = "bold"))
 ```
 
-![](marketing_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
+![](marketing_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
 
 **Variance test with Levene’s test**
 
@@ -3235,7 +3294,7 @@ ggplot(df7.3.2, aes(x = reorder(Country, -total_purchases_country), y = total_pu
         plot.title = element_text(face = "bold"))
 ```
 
-<img src="marketing_files/figure-gfm/unnamed-chunk-44-1.png" style="display: block; margin: auto;" />
+<img src="marketing_files/figure-gfm/unnamed-chunk-45-1.png" style="display: block; margin: auto;" />
 However, US ranked the second in term of average purchase per customer
 (figure 14). It suggests that US customers have slightly better
 purchasing power than the rest of the World in terms of total purchases,
@@ -3264,7 +3323,7 @@ ggplot(df7.3.3, aes(x = x_label, y = average_purchase_customer, colour = Country
        y = "Average purchase per Customer")
 ```
 
-<img src="marketing_files/figure-gfm/unnamed-chunk-45-1.png" style="display: block; margin: auto;" />
+<img src="marketing_files/figure-gfm/unnamed-chunk-46-1.png" style="display: block; margin: auto;" />
 
 ### 7.4 Are gold lovers prefer to shop in store?
 
@@ -3334,7 +3393,7 @@ ggplot(df7.4, aes(x = xlab, y = NumStorePurchases, colour = xlab)) +
   stat_summary(fun = "mean", shape = 4, colour = "black", size = 3, stroke = 2)
 ```
 
-<img src="marketing_files/figure-gfm/unnamed-chunk-47-1.png" style="display: block; margin: auto;" />
+<img src="marketing_files/figure-gfm/unnamed-chunk-48-1.png" style="display: block; margin: auto;" />
 
 It can be argued that “Below\_average” has a lot more data points than
 “Above\_average”, the comparison might be unfair. To make it become a
@@ -3370,7 +3429,7 @@ ggplot(df7.4.2, aes(x = xlab, y = NumStorePurchases, colour = xlab)) +
   stat_summary(fun = "mean", shape = 4, colour = "black", size = 3, stroke = 2)
 ```
 
-<img src="marketing_files/figure-gfm/unnamed-chunk-48-1.png" style="display: block; margin: auto;" />
+<img src="marketing_files/figure-gfm/unnamed-chunk-49-1.png" style="display: block; margin: auto;" />
 Now, two groups have equal sample size. Reduction of sample size from
 1546 to 694 in the group of “Below\_average” leads to a slight reduction
 of mean by 0.105. Still, the interpretation of the graph remains the
@@ -3394,7 +3453,7 @@ df7.4.2 %>% group_by(Group) %>% summarise(ave = mean(NumStorePurchases))
     ##   Group           ave
     ##   <fct>         <dbl>
     ## 1 Above_average  7.77
-    ## 2 Below_average  4.89
+    ## 2 Below_average  4.93
 
 ``` r
 4.903622 - 4.798271
@@ -3410,8 +3469,8 @@ summary(model742)
 ```
 
     ##               Df Sum Sq Mean Sq F value Pr(>F)    
-    ## Group          1   2873  2873.2   324.1 <2e-16 ***
-    ## Residuals   1386  12286     8.9                   
+    ## Group          1   2782  2781.9     307 <2e-16 ***
+    ## Residuals   1386  12558     9.1                   
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -3435,7 +3494,7 @@ ggplot(df7.4.2, aes(sample = residuals)) +
   theme(plot.title = element_text(face = "bold"))
 ```
 
-<img src="marketing_files/figure-gfm/unnamed-chunk-51-1.png" style="display: block; margin: auto;" />
+<img src="marketing_files/figure-gfm/unnamed-chunk-52-1.png" style="display: block; margin: auto;" />
 
 A shapiro-wilk test is also carried out and show the same result that
 the residuals in the dataset are not normally distributed.
@@ -3457,7 +3516,7 @@ by(df7.4.2$NumStorePurchases, df7.4.2$Group, shapiro.test)
     ##  Shapiro-Wilk normality test
     ## 
     ## data:  dd[x, ]
-    ## W = 0.84646, p-value < 2.2e-16
+    ## W = 0.8331, p-value < 2.2e-16
 
 **Variance test with Levene’s test**
 
@@ -3471,7 +3530,7 @@ leveneTest(df7.4.2$NumStorePurchases, df7.4.2$Group)
 
     ## Levene's Test for Homogeneity of Variance (center = median)
     ##         Df F value    Pr(>F)    
-    ## group    1  15.576 8.323e-05 ***
+    ## group    1  12.176 0.0004992 ***
     ##       1386                      
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
@@ -3490,7 +3549,7 @@ wilcox.test(df7.4.2$NumStorePurchases ~ df7.4.2$Group)
     ##  Wilcoxon rank sum test with continuity correction
     ## 
     ## data:  df7.4.2$NumStorePurchases by df7.4.2$Group
-    ## W = 370668, p-value < 2.2e-16
+    ## W = 368979, p-value < 2.2e-16
     ## alternative hypothesis: true location shift is not equal to 0
 
 ``` r
@@ -3581,7 +3640,7 @@ ggplot(df751_192, aes(x = label_x, y = MntFishProducts, fill = group2)) +
        subtitle = "In term of mean (x sign) and median (the thicker line in boxplots)")
 ```
 
-<img src="marketing_files/figure-gfm/unnamed-chunk-57-1.png" style="display: block; margin: auto;" />
+<img src="marketing_files/figure-gfm/unnamed-chunk-58-1.png" style="display: block; margin: auto;" />
 
 **Model building**
 
@@ -3613,7 +3672,7 @@ by(df751_192$MntFishProducts, df751_192$group2, shapiro.test)
     ##  Shapiro-Wilk normality test
     ## 
     ## data:  dd[x, ]
-    ## W = 0.72415, p-value < 2.2e-16
+    ## W = 0.68351, p-value < 2.2e-16
 
 **Variance test with Levene’s test**
 
@@ -3627,11 +3686,9 @@ leveneTest(df751_192$MntFishProducts, df751_192$group2)
 ```
 
     ## Levene's Test for Homogeneity of Variance (center = median)
-    ##        Df F value  Pr(>F)  
-    ## group   1  5.2225 0.02284 *
-    ##       382                  
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ##        Df F value Pr(>F)
+    ## group   1  2.4118 0.1213
+    ##       382
 
 **Mann-Whitney test**
 
@@ -3649,7 +3706,7 @@ wilcox.test(df751_192$MntFishProducts ~ df751_192$group2)
     ##  Wilcoxon rank sum test with continuity correction
     ## 
     ## data:  df751_192$MntFishProducts by df751_192$group2
-    ## W = 14478, p-value = 0.0002541
+    ## W = 15380, p-value = 0.004733
     ## alternative hypothesis: true location shift is not equal to 0
 
 #### 7.5.2 What other factors are significantly related to amount spent on fish?
@@ -4111,7 +4168,7 @@ ggplot(df76_viz, aes(x = xlabel, y = rate, fill = Cmp)) +
        x = "Country") 
 ```
 
-![](marketing_files/figure-gfm/unnamed-chunk-72-1.png)<!-- -->
+![](marketing_files/figure-gfm/unnamed-chunk-73-1.png)<!-- -->
 
 **Generalised Linear Models (GLM)**
 
