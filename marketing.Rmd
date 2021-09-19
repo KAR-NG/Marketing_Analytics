@@ -913,7 +913,7 @@ The preliminary step before statistical analysis is to check correlations betwee
 
 The rule of thumb is that if **correlation is greater than 0.8** between two independent variables, then multicollinearity would exist. Following table successfully present the correlation between each numerical variables in the dataset. 
 
-One can just look for correlation value that is 0.8 but not equal to 1, then refer to the variable pair that associated with this value.  
+One can just look for correlation values that are 0.8 but not equal to 1, then refer to the variables that associated with this value. This value range indicates possible existence of multicollinearity.  
 
 ```{r}
 
@@ -927,7 +927,8 @@ df7.1 <- md2 %>%  dplyr::select(Year_Birth, Age_atRegister, Income, Kidhome, Tee
 round(cor(df7.1),2)
 
 ```
-Though inspecting the table visually is an option, but I would use code to done the job for me. Following codes help me to check the presence of correlation values that are higher than 0.8, and not 1. 
+
+Though inspecting the table visually is an option, I can also use codes to help filtering the data for me. Following codes help me to check the presence of correlation values that fall between 0.8 to 1. 
 
 * There is no multicollinearity in the dataset.
 
@@ -950,19 +951,18 @@ cor.table %>% filter(correlation > 0.8 & correlation < 1)
 
 #### 7.1.2 Variance Inflation factor (VIF) assessment
 
-As a rule of thumb, VIF should be less than 4 to have no multicollinearity issue (the Pennsylvania State University 2018). The result should be the same as previous correlation analysis. Apart from the first two variables "Year_Birth" and "Age_atRegister", there is no multicollinearity exists in all variables. 
+As a rule of thumb, VIF should be less than 4 to have no multicollinearity issue (the Pennsylvania State University 2018). The result should be the same as previous correlation analysis. Apart from the first two variables "Year_Birth" and "Age_atRegister", there is no multicollinearity exists in all variables. The two variables are essentially the same thing, I created "age_atRegister" from the "Year_Birth". I will only use one of them in any model because they represent the same information. 
 
 ```{r}
 model_vif <- lm(NumStorePurchases ~. , data = df7.1)
 vif(model_vif)
+
 ```
 
-The first two variables are essentially the same thing, I created "age_atRegister" from the "Year_Birth". I will only use one of them in any model because they represent the same information. 
+
 
 
 ### 7.2 Factors that significantly related to in-store purchases
-
-I will explore both the positive and negative relationships, and testing are they statistical significance. 
 
 #### 7.2.1 Data Partitioning 
 
