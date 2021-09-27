@@ -80,6 +80,7 @@ library(caret)
 library(DescTools)
 library(multcomp)
 library(olsrr)
+library(corrplot)
 
 ```
 
@@ -906,16 +907,15 @@ ggplot(df6.4, aes(x = reorder(channels, -total_no_of_purchases), y = total_no_of
 
 ### 7.1 Testing for multicollinearity 
 
-The preliminary step before statistical analysis is to check correlations between numerical independent variables within the dataset to avoid significant pairs being used in the same model, as it would make coefficient estimates unstable and creating invalid statistical results. It is known as multicollinearity, [detail](https://blog.minitab.com/en/understanding-statistics/handling-multicollinearity-in-regression-analysis ).   
-
+It is a preliminary step before going deeper into statistical analysis. This section checks correlations between numerical independent variables within the dataset to avoid correlated pairs being used in the same model, as it would make coefficient estimates inaccurate (or known as "unstable") and creating invalid statistical results. It is known as a multicollinearity problem, [detail](https://blog.minitab.com/en/understanding-statistics/handling-multicollinearity-in-regression-analysis ).   
 
 #### 7.1.1 Correlation assessment
 
-The rule of thumb is that if **correlation is greater than 0.8** between two independent variables, then multicollinearity would exist. Following table successfully present the correlation between each numerical variables in the dataset. 
+The rule of thumb is that if **correlation is greater than 0.8** between two independent variables, then multicollinearity problem would exist. Following table successfully present the correlation between each numerical variables in the dataset. 
 
 One can just look for correlation values that are 0.8 but not equal to 1, then refer to the variables that associated with this value. This value range indicates possible existence of multicollinearity.  
 
-```{r}
+```{r, fig.width=10, fig.height=10}
 
 # Filter non-numerical and binary variable, to select only numerical variables (predictors) to test relationships among themselve. 
 
@@ -924,13 +924,16 @@ df7.1 <- md2 %>%  dplyr::select(Year_Birth, Age_atRegister, Income, Kidhome, Tee
 
 # Correlation test of each pair
 
-round(cor(df7.1),2)
+cor7.1 <- cor(df7.1)
+
+corrplot(cor7.1, method = "number", type = "upper")
 
 ```
+Apart from Age_atRegister and Year_Birth that has a complete correlation because they are duplicates of each other, there are no more pair of variables that have correlation values fall between 1 and 0.8.
 
-Though inspecting the table visually is an option, I can also use codes to help filtering the data for me. Following codes help me to check the presence of correlation values that fall between 0.8 to 1. 
+Though inspecting the table visually is an option, I can also use codes to help filtering out the correlated group. Following codes help me to check the presence of correlation values that fall between 0.8 to 1. 
 
-* There is no multicollinearity in the dataset.
+* Apart from Age_atRegister and Year_Birth, there is no more correlated pair of variables in the dataset. 
 
 ```{r}
 # Checking.
@@ -951,15 +954,15 @@ cor.table %>% filter(correlation > 0.8 & correlation < 1)
 
 #### 7.1.2 Variance Inflation factor (VIF) assessment
 
-As a rule of thumb, VIF should be less than 4 to have no multicollinearity issue (the Pennsylvania State University 2018). The result should be the same as previous correlation analysis. Apart from the first two variables "Year_Birth" and "Age_atRegister", there is no multicollinearity exists in all variables. The two variables are essentially the same thing, I created "age_atRegister" from the "Year_Birth". I will only use one of them in any model because they represent the same information. 
+VIF is another popular option to detect multicollinearity. As a rule of thumb, VIF should be less than 4 to have no multicollinearity issue (the Pennsylvania State University 2018). The result should be the same as previous correlation analysis. 
+
+Apart from the first two variables "Year_Birth" and "Age_atRegister", there is no multicollinearity exists in all variables. The two variables are fundamentally supplying the same information, I created "age_atRegister" from the "Year_Birth". I will only use one of them in any model because they represent the same information. 
 
 ```{r}
 model_vif <- lm(NumStorePurchases ~. , data = df7.1)
 vif(model_vif)
 
 ```
-
-
 
 
 ### 7.2 Factors that significantly related to in-store purchases
@@ -1055,56 +1058,6 @@ model721_sum_df %>%
 ```
 
   * For every 1 unit increment in the predictors, the number of store purchases will decrease by respective estimate.  
-
-
-****
-
-### Lasso
-
-```{r}
-
-library(glmnet)
-
-model_lasso <- train(NumStorePurchases ~., train.data,
-                     method = "glmnet",
-                     trControl = trainControl(method = "repeatedcv", 
-                                              number = 10, 
-                                              repeats = 3),
-                     tuneGrid = expand.grid(alpha = 1,
-                                            lambda = 10^seq(-3, 3, length = 100)))
-
-
-model_lasso$bestTune
-plot(model_lasso$finalModel, xvar = "dev", label = T)
-summary(model_lasso$bestTune)
-
-plot(varImp(model_lasso))
-
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ### 7.3 Does US's purchasing power significantly better than the rest of the world in terms of total purchases ?
 

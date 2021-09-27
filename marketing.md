@@ -47,7 +47,6 @@ Kar Ng
         -   [7.2.2 Building the model and model
             performance](#722-building-the-model-and-model-performance)
         -   [7.2.3 Summarise the model](#723-summarise-the-model)
-    -   [Lasso](#lasso)
     -   [7.3 Does US’s purchasing power significantly better than the
         rest of the world in terms of total purchases
         ?](#73-does-uss-purchasing-power-significantly-better-than-the-rest-of-the-world-in-terms-of-total-purchases-)
@@ -160,6 +159,7 @@ library(caret)
 library(DescTools)
 library(multcomp)
 library(olsrr)
+library(corrplot)
 ```
 
 ## 3 INTRODUCTION
@@ -2686,19 +2686,20 @@ ggplot(df6.4, aes(x = reorder(channels, -total_no_of_purchases), y = total_no_of
 
 ### 7.1 Testing for multicollinearity
 
-The preliminary step before statistical analysis is to check
-correlations between numerical independent variables within the dataset
-to avoid significant pairs being used in the same model, as it would
-make coefficient estimates unstable and creating invalid statistical
-results. It is known as multicollinearity,
+It is a preliminary step before going deeper into statistical analysis.
+This section checks correlations between numerical independent variables
+within the dataset to avoid correlated pairs being used in the same
+model, as it would make coefficient estimates inaccurate (or known as
+“unstable”) and creating invalid statistical results. It is known as a
+multicollinearity problem,
 [detail](https://blog.minitab.com/en/understanding-statistics/handling-multicollinearity-in-regression-analysis).
 
 #### 7.1.1 Correlation assessment
 
 The rule of thumb is that if **correlation is greater than 0.8** between
-two independent variables, then multicollinearity would exist. Following
-table successfully present the correlation between each numerical
-variables in the dataset.
+two independent variables, then multicollinearity problem would exist.
+Following table successfully present the correlation between each
+numerical variables in the dataset.
 
 One can just look for correlation values that are 0.8 but not equal to
 1, then refer to the variables that associated with this value. This
@@ -2712,105 +2713,22 @@ df7.1 <- md2 %>%  dplyr::select(Year_Birth, Age_atRegister, Income, Kidhome, Tee
 
 # Correlation test of each pair
 
-round(cor(df7.1),2)
+cor7.1 <- cor(df7.1)
+
+corrplot(cor7.1, method = "number", type = "upper")
 ```
 
-    ##                     Year_Birth Age_atRegister Income Kidhome Teenhome MntWines
-    ## Year_Birth                1.00          -1.00  -0.16    0.23    -0.35    -0.16
-    ## Age_atRegister           -1.00           1.00   0.16   -0.23     0.35     0.15
-    ## Income                   -0.16           0.16   1.00   -0.43     0.02     0.58
-    ## Kidhome                   0.23          -0.23  -0.43    1.00    -0.04    -0.50
-    ## Teenhome                 -0.35           0.35   0.02   -0.04     1.00     0.00
-    ## MntWines                 -0.16           0.15   0.58   -0.50     0.00     1.00
-    ## MntFruits                -0.02           0.01   0.43   -0.37    -0.18     0.39
-    ## MntMeatProducts          -0.03           0.03   0.58   -0.44    -0.26     0.56
-    ## MntFishProducts          -0.04           0.04   0.44   -0.39    -0.20     0.40
-    ## MntSweetProducts         -0.02           0.01   0.44   -0.37    -0.16     0.39
-    ## MntGoldProds             -0.06           0.05   0.32   -0.35    -0.02     0.39
-    ## NumDealsPurchases        -0.06           0.05  -0.08    0.22     0.39     0.01
-    ## NumWebPurchases          -0.15           0.14   0.38   -0.36     0.16     0.54
-    ## NumCatalogPurchases      -0.12           0.12   0.59   -0.50    -0.11     0.64
-    ## NumStorePurchases        -0.13           0.12   0.53   -0.50     0.05     0.64
-    ## NumWebVisitsMonth         0.12          -0.13  -0.55    0.45     0.13    -0.32
-    ## Response                  0.02          -0.03   0.13   -0.08    -0.15     0.25
-    ##                     MntFruits MntMeatProducts MntFishProducts MntSweetProducts
-    ## Year_Birth              -0.02           -0.03           -0.04            -0.02
-    ## Age_atRegister           0.01            0.03            0.04             0.01
-    ## Income                   0.43            0.58            0.44             0.44
-    ## Kidhome                 -0.37           -0.44           -0.39            -0.37
-    ## Teenhome                -0.18           -0.26           -0.20            -0.16
-    ## MntWines                 0.39            0.56            0.40             0.39
-    ## MntFruits                1.00            0.54            0.59             0.57
-    ## MntMeatProducts          0.54            1.00            0.57             0.52
-    ## MntFishProducts          0.59            0.57            1.00             0.58
-    ## MntSweetProducts         0.57            0.52            0.58             1.00
-    ## MntGoldProds             0.39            0.35            0.42             0.37
-    ## NumDealsPurchases       -0.13           -0.12           -0.14            -0.12
-    ## NumWebPurchases          0.30            0.29            0.29             0.35
-    ## NumCatalogPurchases      0.49            0.72            0.53             0.49
-    ## NumStorePurchases        0.46            0.48            0.46             0.45
-    ## NumWebVisitsMonth       -0.42           -0.54           -0.45            -0.42
-    ## Response                 0.13            0.24            0.11             0.12
-    ##                     MntGoldProds NumDealsPurchases NumWebPurchases
-    ## Year_Birth                 -0.06             -0.06           -0.15
-    ## Age_atRegister              0.05              0.05            0.14
-    ## Income                      0.32             -0.08            0.38
-    ## Kidhome                    -0.35              0.22           -0.36
-    ## Teenhome                   -0.02              0.39            0.16
-    ## MntWines                    0.39              0.01            0.54
-    ## MntFruits                   0.39             -0.13            0.30
-    ## MntMeatProducts             0.35             -0.12            0.29
-    ## MntFishProducts             0.42             -0.14            0.29
-    ## MntSweetProducts            0.37             -0.12            0.35
-    ## MntGoldProds                1.00              0.05            0.42
-    ## NumDealsPurchases           0.05              1.00            0.23
-    ## NumWebPurchases             0.42              0.23            1.00
-    ## NumCatalogPurchases         0.44             -0.01            0.38
-    ## NumStorePurchases           0.38              0.07            0.50
-    ## NumWebVisitsMonth          -0.25              0.35           -0.06
-    ## Response                    0.14              0.00            0.15
-    ##                     NumCatalogPurchases NumStorePurchases NumWebVisitsMonth
-    ## Year_Birth                        -0.12             -0.13              0.12
-    ## Age_atRegister                     0.12              0.12             -0.13
-    ## Income                             0.59              0.53             -0.55
-    ## Kidhome                           -0.50             -0.50              0.45
-    ## Teenhome                          -0.11              0.05              0.13
-    ## MntWines                           0.64              0.64             -0.32
-    ## MntFruits                          0.49              0.46             -0.42
-    ## MntMeatProducts                    0.72              0.48             -0.54
-    ## MntFishProducts                    0.53              0.46             -0.45
-    ## MntSweetProducts                   0.49              0.45             -0.42
-    ## MntGoldProds                       0.44              0.38             -0.25
-    ## NumDealsPurchases                 -0.01              0.07              0.35
-    ## NumWebPurchases                    0.38              0.50             -0.06
-    ## NumCatalogPurchases                1.00              0.52             -0.52
-    ## NumStorePurchases                  0.52              1.00             -0.43
-    ## NumWebVisitsMonth                 -0.52             -0.43              1.00
-    ## Response                           0.22              0.04              0.00
-    ##                     Response
-    ## Year_Birth              0.02
-    ## Age_atRegister         -0.03
-    ## Income                  0.13
-    ## Kidhome                -0.08
-    ## Teenhome               -0.15
-    ## MntWines                0.25
-    ## MntFruits               0.13
-    ## MntMeatProducts         0.24
-    ## MntFishProducts         0.11
-    ## MntSweetProducts        0.12
-    ## MntGoldProds            0.14
-    ## NumDealsPurchases       0.00
-    ## NumWebPurchases         0.15
-    ## NumCatalogPurchases     0.22
-    ## NumStorePurchases       0.04
-    ## NumWebVisitsMonth       0.00
-    ## Response                1.00
+![](marketing_files/figure-gfm/unnamed-chunk-30-1.png)<!-- --> Apart
+from Age\_atRegister and Year\_Birth that has a complete correlation
+because they are duplicates of each other, there are no more pair of
+variables that have correlation values fall between 1 and 0.8.
 
 Though inspecting the table visually is an option, I can also use codes
-to help filtering the data for me. Following codes help me to check the
-presence of correlation values that fall between 0.8 to 1.
+to help filtering out the correlated group. Following codes help me to
+check the presence of correlation values that fall between 0.8 to 1.
 
--   There is no multicollinearity in the dataset.
+-   Apart from Age\_atRegister and Year\_Birth, there is no more
+    correlated pair of variables in the dataset.
 
 ``` r
 # Checking.
@@ -2833,14 +2751,16 @@ cor.table %>% filter(correlation > 0.8 & correlation < 1)
 
 #### 7.1.2 Variance Inflation factor (VIF) assessment
 
-As a rule of thumb, VIF should be less than 4 to have no
-multicollinearity issue (the Pennsylvania State University 2018). The
-result should be the same as previous correlation analysis. Apart from
-the first two variables “Year\_Birth” and “Age\_atRegister”, there is no
-multicollinearity exists in all variables. The two variables are
-essentially the same thing, I created “age\_atRegister” from the
-“Year\_Birth”. I will only use one of them in any model because they
-represent the same information.
+VIF is another popular option to detect multicollinearity. As a rule of
+thumb, VIF should be less than 4 to have no multicollinearity issue (the
+Pennsylvania State University 2018). The result should be the same as
+previous correlation analysis.
+
+Apart from the first two variables “Year\_Birth” and “Age\_atRegister”,
+there is no multicollinearity exists in all variables. The two variables
+are fundamentally supplying the same information, I created
+“age\_atRegister” from the “Year\_Birth”. I will only use one of them in
+any model because they represent the same information.
 
 ``` r
 model_vif <- lm(NumStorePurchases ~. , data = df7.1)
@@ -3125,69 +3045,6 @@ MntMeatProducts
 -   For every 1 unit increment in the predictors, the number of store
     purchases will decrease by respective estimate.
 
-------------------------------------------------------------------------
-
-### Lasso
-
-``` r
-library(glmnet)
-```
-
-    ## Loading required package: Matrix
-
-    ## 
-    ## Attaching package: 'Matrix'
-
-    ## The following objects are masked from 'package:tidyr':
-    ## 
-    ##     expand, pack, unpack
-
-    ## Loaded glmnet 4.1-2
-
-``` r
-model_lasso <- train(NumStorePurchases ~., train.data,
-                     method = "glmnet",
-                     trControl = trainControl(method = "repeatedcv", 
-                                              number = 10, 
-                                              repeats = 3),
-                     tuneGrid = expand.grid(alpha = 1,
-                                            lambda = 10^seq(-3, 3, length = 100)))
-```
-
-    ## Warning in nominalTrainWorkflow(x = x, y = y, wts = weights, info = trainInfo, :
-    ## There were missing values in resampled performance measures.
-
-``` r
-model_lasso$bestTune
-```
-
-    ##    alpha     lambda
-    ## 25     1 0.02848036
-
-``` r
-plot(model_lasso$finalModel, xvar = "dev", label = T)
-```
-
-![](marketing_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
-
-``` r
-summary(model_lasso$bestTune)
-```
-
-    ##      alpha       lambda       
-    ##  Min.   :1   Min.   :0.02848  
-    ##  1st Qu.:1   1st Qu.:0.02848  
-    ##  Median :1   Median :0.02848  
-    ##  Mean   :1   Mean   :0.02848  
-    ##  3rd Qu.:1   3rd Qu.:0.02848  
-    ##  Max.   :1   Max.   :0.02848
-
-``` r
-plot(varImp(model_lasso))
-```
-
-![](marketing_files/figure-gfm/unnamed-chunk-39-2.png)<!-- -->
-
 ### 7.3 Does US’s purchasing power significantly better than the rest of the world in terms of total purchases ?
 
 #### 7.3.1 Comparing total purchases PER CUSTOMER in different country\*\*
@@ -3232,7 +3089,7 @@ ggplot(df7.3, aes(sample = residuals)) +
   theme(plot.title = element_text(face = "bold"))
 ```
 
-![](marketing_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
+![](marketing_files/figure-gfm/unnamed-chunk-41-1.png)<!-- -->
 
 **Variance test with Levene’s test**
 
@@ -3294,7 +3151,7 @@ ggplot(df7.3.2, aes(x = reorder(Country, -total_purchases_country), y = total_pu
         plot.title = element_text(face = "bold"))
 ```
 
-<img src="marketing_files/figure-gfm/unnamed-chunk-45-1.png" style="display: block; margin: auto;" />
+<img src="marketing_files/figure-gfm/unnamed-chunk-44-1.png" style="display: block; margin: auto;" />
 However, US ranked the second in term of average purchase per customer
 (figure 14). It suggests that US customers have slightly better
 purchasing power than the rest of the World in terms of total purchases,
@@ -3323,7 +3180,7 @@ ggplot(df7.3.3, aes(x = x_label, y = average_purchase_customer, colour = Country
        y = "Average purchase per Customer")
 ```
 
-<img src="marketing_files/figure-gfm/unnamed-chunk-46-1.png" style="display: block; margin: auto;" />
+<img src="marketing_files/figure-gfm/unnamed-chunk-45-1.png" style="display: block; margin: auto;" />
 
 ### 7.4 Are gold lovers prefer to shop in store?
 
@@ -3393,7 +3250,7 @@ ggplot(df7.4, aes(x = xlab, y = NumStorePurchases, colour = xlab)) +
   stat_summary(fun = "mean", shape = 4, colour = "black", size = 3, stroke = 2)
 ```
 
-<img src="marketing_files/figure-gfm/unnamed-chunk-48-1.png" style="display: block; margin: auto;" />
+<img src="marketing_files/figure-gfm/unnamed-chunk-47-1.png" style="display: block; margin: auto;" />
 
 It can be argued that “Below\_average” has a lot more data points than
 “Above\_average”, the comparison might be unfair. To make it become a
@@ -3429,7 +3286,7 @@ ggplot(df7.4.2, aes(x = xlab, y = NumStorePurchases, colour = xlab)) +
   stat_summary(fun = "mean", shape = 4, colour = "black", size = 3, stroke = 2)
 ```
 
-<img src="marketing_files/figure-gfm/unnamed-chunk-49-1.png" style="display: block; margin: auto;" />
+<img src="marketing_files/figure-gfm/unnamed-chunk-48-1.png" style="display: block; margin: auto;" />
 Now, two groups have equal sample size. Reduction of sample size from
 1546 to 694 in the group of “Below\_average” leads to a slight reduction
 of mean by 0.105. Still, the interpretation of the graph remains the
@@ -3453,7 +3310,7 @@ df7.4.2 %>% group_by(Group) %>% summarise(ave = mean(NumStorePurchases))
     ##   Group           ave
     ##   <fct>         <dbl>
     ## 1 Above_average  7.77
-    ## 2 Below_average  4.93
+    ## 2 Below_average  4.89
 
 ``` r
 4.903622 - 4.798271
@@ -3469,8 +3326,8 @@ summary(model742)
 ```
 
     ##               Df Sum Sq Mean Sq F value Pr(>F)    
-    ## Group          1   2782  2781.9     307 <2e-16 ***
-    ## Residuals   1386  12558     9.1                   
+    ## Group          1   2873  2873.2   324.1 <2e-16 ***
+    ## Residuals   1386  12286     8.9                   
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -3494,7 +3351,7 @@ ggplot(df7.4.2, aes(sample = residuals)) +
   theme(plot.title = element_text(face = "bold"))
 ```
 
-<img src="marketing_files/figure-gfm/unnamed-chunk-52-1.png" style="display: block; margin: auto;" />
+<img src="marketing_files/figure-gfm/unnamed-chunk-51-1.png" style="display: block; margin: auto;" />
 
 A shapiro-wilk test is also carried out and show the same result that
 the residuals in the dataset are not normally distributed.
@@ -3516,7 +3373,7 @@ by(df7.4.2$NumStorePurchases, df7.4.2$Group, shapiro.test)
     ##  Shapiro-Wilk normality test
     ## 
     ## data:  dd[x, ]
-    ## W = 0.8331, p-value < 2.2e-16
+    ## W = 0.84646, p-value < 2.2e-16
 
 **Variance test with Levene’s test**
 
@@ -3530,7 +3387,7 @@ leveneTest(df7.4.2$NumStorePurchases, df7.4.2$Group)
 
     ## Levene's Test for Homogeneity of Variance (center = median)
     ##         Df F value    Pr(>F)    
-    ## group    1  12.176 0.0004992 ***
+    ## group    1  15.576 8.323e-05 ***
     ##       1386                      
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
@@ -3549,7 +3406,7 @@ wilcox.test(df7.4.2$NumStorePurchases ~ df7.4.2$Group)
     ##  Wilcoxon rank sum test with continuity correction
     ## 
     ## data:  df7.4.2$NumStorePurchases by df7.4.2$Group
-    ## W = 368979, p-value < 2.2e-16
+    ## W = 370668, p-value < 2.2e-16
     ## alternative hypothesis: true location shift is not equal to 0
 
 ``` r
@@ -3640,7 +3497,7 @@ ggplot(df751_192, aes(x = label_x, y = MntFishProducts, fill = group2)) +
        subtitle = "In term of mean (x sign) and median (the thicker line in boxplots)")
 ```
 
-<img src="marketing_files/figure-gfm/unnamed-chunk-58-1.png" style="display: block; margin: auto;" />
+<img src="marketing_files/figure-gfm/unnamed-chunk-57-1.png" style="display: block; margin: auto;" />
 
 **Model building**
 
@@ -3672,7 +3529,7 @@ by(df751_192$MntFishProducts, df751_192$group2, shapiro.test)
     ##  Shapiro-Wilk normality test
     ## 
     ## data:  dd[x, ]
-    ## W = 0.68351, p-value < 2.2e-16
+    ## W = 0.72415, p-value < 2.2e-16
 
 **Variance test with Levene’s test**
 
@@ -3686,9 +3543,11 @@ leveneTest(df751_192$MntFishProducts, df751_192$group2)
 ```
 
     ## Levene's Test for Homogeneity of Variance (center = median)
-    ##        Df F value Pr(>F)
-    ## group   1  2.4118 0.1213
-    ##       382
+    ##        Df F value  Pr(>F)  
+    ## group   1  5.2225 0.02284 *
+    ##       382                  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 **Mann-Whitney test**
 
@@ -3706,7 +3565,7 @@ wilcox.test(df751_192$MntFishProducts ~ df751_192$group2)
     ##  Wilcoxon rank sum test with continuity correction
     ## 
     ## data:  df751_192$MntFishProducts by df751_192$group2
-    ## W = 15380, p-value = 0.004733
+    ## W = 14478, p-value = 0.0002541
     ## alternative hypothesis: true location shift is not equal to 0
 
 #### 7.5.2 What other factors are significantly related to amount spent on fish?
@@ -4168,7 +4027,7 @@ ggplot(df76_viz, aes(x = xlabel, y = rate, fill = Cmp)) +
        x = "Country") 
 ```
 
-![](marketing_files/figure-gfm/unnamed-chunk-73-1.png)<!-- -->
+![](marketing_files/figure-gfm/unnamed-chunk-72-1.png)<!-- -->
 
 **Generalised Linear Models (GLM)**
 
